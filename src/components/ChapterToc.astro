@@ -24,7 +24,7 @@ const flatNodes = flattenTree(nodes);
           style={`padding-left: ${node.depth * 1.25}rem;`}
           data-depth={node.depth}>
           <span class="chapter-toc-dot">·</span>
-          <span>{node.title}</span>
+          <span>{node.breadcrumb.length > 0 ? node.breadcrumb[node.breadcrumb.length - 1] : node.title}</span>
         </a>
       ))}
     </nav>

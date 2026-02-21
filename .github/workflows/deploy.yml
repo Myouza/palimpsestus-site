@@ -1,10 +1,14 @@
 # deploy.yml — Build & Deploy Palimpsestus
 #
 # Triggers:
-#   1. Push to main → deploy to production
-#   2. Push to preview → deploy to staging
-#   3. repository_dispatch from private content repo
-#      (payload.branch determines target: main→prod, preview→staging)
+#   1. Push to main/preview (framework changes)
+#   2. repository_dispatch from private content repo
+#
+# Logic:
+#   - Framework push: uses pushed branch for both framework & content
+#   - Content dispatch: uses main for framework, payload.branch for content
+#   - main → deploy to production
+#   - preview → deploy to staging
 
 name: Build & Deploy
 
@@ -14,7 +18,6 @@ on:
   repository_dispatch:
     types: [content-update]
 
-# Prevent concurrent deployments to the same target
 concurrency:
   group: deploy-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || github.ref_name }}
   cancel-in-progress: true
@@ -30,8 +33,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             BRANCH="${{ github.event.client_payload.branch }}"
+            # Content dispatch: always use main for framework code
+            FRAMEWORK_REF="main"
           else
             BRANCH="${{ github.ref_name }}"
+            # Framework push: use the branch that was pushed
+            FRAMEWORK_REF="${{ github.ref_name }}"
           fi
 
           if [ "$BRANCH" = "main" ]; then
@@ -48,18 +55,19 @@ jobs:
           fi
 
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "framework_ref=$FRAMEWORK_REF" >> $GITHUB_OUTPUT
 
-      # ── Checkout framework (this public repo) ──
+      # ── Checkout framework ──
       - name: Checkout framework
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.target.outputs.branch }}
+          ref: ${{ steps.target.outputs.framework_ref }}
 
       # ── Checkout content (private repo) ──
       - name: Checkout content
         uses: actions/checkout@v4
         with:
-          repository: ${{ secrets.CONTENT_REPO }}  # e.g., "myouza/palimpsestus-content"
+          repository: ${{ secrets.CONTENT_REPO }}
           ref: ${{ steps.target.outputs.content_ref }}
           ssh-key: ${{ secrets.CONTENT_DEPLOY_KEY }}
           path: _content
@@ -69,15 +77,11 @@ jobs:
         run: |
           rm -rf src/content/novel
           mkdir -p src/content/novel
-          # Copy all volume folders (01/, 02/, etc.)
           cp -r _content/[0-9]*/ src/content/novel/ 2>/dev/null || true
-          # Remove meta.yaml files so Astro doesn't try to parse them as content
           find src/content/novel -name 'meta.yaml' -delete
-          # Copy assets (images, etc.) if they exist
           if [ -d "_content/assets" ]; then
             cp -r _content/assets/ public/assets/
           fi
-          # Show what we got
           echo "Content files:"
           find src/content/novel -name '*.mdx' | sort
 
@@ -114,6 +118,7 @@ jobs:
       - name: Deployment summary
         run: |
           echo "### 🚀 Deployed to ${{ steps.target.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Branch: \`${{ steps.target.outputs.branch }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Framework: \`${{ steps.target.outputs.framework_ref }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Content: \`${{ steps.target.outputs.content_ref }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Target: \`${{ steps.target.outputs.deploy_path }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Trigger: \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY

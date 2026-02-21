@@ -8,7 +8,11 @@ const entries = await getCollection('novel');
 const { chapters } = buildNavigation(entries);
 
 const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
-  return { id: n.id, title: n.title, url: n.url, depth: n.depth, hasChildren: n.hasChildren, children: n.children.map(ser) };
+  return {
+    id: n.id, title: n.title, url: n.url, depth: n.depth,
+    breadcrumb: n.breadcrumb,
+    hasChildren: n.hasChildren, children: n.children.map(ser),
+  };
 }));
 ---
 
@@ -28,6 +32,14 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
   </script>
 
   <script>
+    /** Get short display name from breadcrumb (last segment) */
+    function displayName(node: any): string {
+      if (node.breadcrumb && node.breadcrumb.length > 0) {
+        return node.breadcrumb[node.breadcrumb.length - 1];
+      }
+      return node.title;
+    }
+
     function initHomeToc() {
       const container = document.getElementById('home-toc');
       if (!container) return;
@@ -36,17 +48,11 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
       const chapters = JSON.parse(raw);
       container.innerHTML = '';
 
-      /**
-       * Render all descendants with proper indentation.
-       * depth=0 is the chapter itself (not rendered here since it's the parent).
-       * Children start at depth=1 relative to chapter.
-       */
       function renderSubtree(nodes: any[], parent: HTMLElement) {
         nodes.forEach((node: any) => {
           const row = document.createElement('div');
           row.style.cssText = `display:flex; align-items:center; padding-left:${(node.depth) * 1.25}rem;`;
 
-          // Dot prefix for all children
           const dot = document.createElement('span');
           dot.style.cssText = 'width:1rem; flex-shrink:0; text-align:center; opacity:0.3; color:var(--text-muted); font-size:0.8rem;';
           dot.textContent = '·';
@@ -54,7 +60,7 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
 
           const link = document.createElement('a');
           link.href = node.url;
-          link.textContent = node.title;
+          link.textContent = displayName(node);
           link.style.cssText = `display:block; padding:0.35rem 0; color:var(--text); transition:opacity 0.15s; font-size:${node.depth <= 1 ? '0.95rem' : '0.875rem'};`;
           link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
           link.addEventListener('mouseleave', () => link.style.opacity = '1');
@@ -71,7 +77,6 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
         const row = document.createElement('div');
         row.style.cssText = 'display:flex; align-items:center; padding:0.5rem 0;';
 
-        // Icon column: fixed width for alignment
         const iconCol = document.createElement('span');
         iconCol.style.cssText = 'width:1.25rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;';
 
@@ -98,23 +103,25 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
           row.appendChild(link);
           container.appendChild(row);
 
-          // Children container
+          // CSS Grid collapsible
           const childBox = document.createElement('div');
-          childBox.style.cssText = 'overflow:hidden; max-height:0; transition:max-height 0.3s ease;';
+          childBox.style.cssText = 'display:grid; grid-template-rows:0fr; transition:grid-template-rows 0.3s ease;';
+          const childInner = document.createElement('div');
+          childInner.style.cssText = 'overflow:hidden;';
+          childBox.appendChild(childInner);
           container.appendChild(childBox);
 
           let isOpen = false;
           iconCol.addEventListener('click', (e) => {
             e.stopPropagation();
             isOpen = !isOpen;
-            if (isOpen && childBox.children.length === 0) {
-              renderSubtree(ch.children, childBox);
+            if (isOpen && childInner.children.length === 0) {
+              renderSubtree(ch.children, childInner);
             }
-            childBox.style.maxHeight = isOpen ? '4000px' : '0';
+            childBox.style.gridTemplateRows = isOpen ? '1fr' : '0fr';
             arrow.style.transform = isOpen ? 'rotate(90deg)' : '';
           });
         } else {
-          // No children — empty icon space for alignment
           row.appendChild(iconCol);
 
           const link = document.createElement('a');

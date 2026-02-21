@@ -8,10 +8,11 @@ interface Props {
 
 const { chapters } = Astro.props;
 
-// Serialize once for all pages — currentId is derived from URL at runtime
+// Serialize tree with breadcrumb for display names
 const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
   return {
     id: n.id, title: n.title, url: n.url, depth: n.depth,
+    breadcrumb: n.breadcrumb,
     hasChildren: n.hasChildren, isChapter: n.isChapter,
     children: n.children.map(ser),
   };
@@ -42,16 +43,11 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
   </div>
 </aside>
 
-{/* Store tree data globally so it survives View Transitions */}
 <script is:inline define:vars={{ treeData }}>
   window.__palimpsestusTree = treeData;
 </script>
 
 <script>
-  /**
-   * Derive the content ID from the current URL pathname.
-   * "/01/07/00/" → "01/07-00"
-   */
   function urlToId(pathname: string): string {
     const parts = pathname.replace(/^\/|\/$/g, '').split('/');
     if (parts.length < 2) return '';
@@ -60,15 +56,19 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     return `${volume}/${rest}`;
   }
 
-  /**
-   * Check if nodeId is an ancestor of targetId.
-   * "01/01" is ancestor of "01/01-00" and "01/01-00-01"
-   */
   function isAncestorOf(ancestorId: string, targetId: string): boolean {
     if (!ancestorId || !targetId) return false;
     const aSection = ancestorId.replace(/^[^/]+\//, '');
     const tSection = targetId.replace(/^[^/]+\//, '');
     return tSection.startsWith(aSection + '-');
+  }
+
+  /** Get the short display name from breadcrumb (last segment) */
+  function displayName(node: any): string {
+    if (node.breadcrumb && node.breadcrumb.length > 0) {
+      return node.breadcrumb[node.breadcrumb.length - 1];
+    }
+    return node.title;
   }
 
   function initDrawer() {
@@ -83,11 +83,9 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     const chapters = JSON.parse(raw);
     const currentId = urlToId(window.location.pathname);
 
-    // Drawer open/close
     function openDrawer() { panel!.classList.remove('-translate-x-full'); overlay!.classList.add('active'); }
     function closeDrawer() { panel!.classList.add('-translate-x-full'); overlay!.classList.remove('active'); }
 
-    // Remove old listeners by cloning
     const newToggle = toggle.cloneNode(true);
     toggle.parentNode?.replaceChild(newToggle, toggle);
     newToggle.addEventListener('click', () => panel.classList.contains('-translate-x-full') ? openDrawer() : closeDrawer());
@@ -96,7 +94,6 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     overlay.parentNode?.replaceChild(newOverlay, overlay);
     newOverlay.addEventListener('click', closeDrawer);
 
-    // Render tree
     nav.innerHTML = '';
 
     function renderNode(node: any, container: HTMLElement) {
@@ -104,16 +101,12 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
       const isAncestor = isAncestorOf(node.id, currentId);
 
       const row = document.createElement('div');
-      row.style.display = 'flex';
-      row.style.alignItems = 'center';
+      row.style.cssText = 'display:flex; align-items:center;';
 
-      // Icon column: fixed width for alignment.
-      // All items get this spacer so text aligns consistently.
       const iconCol = document.createElement('span');
       iconCol.style.cssText = 'width:1rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;';
 
       if (node.hasChildren) {
-        // CSS triangle
         const arrow = document.createElement('span');
         arrow.style.cssText = `
           display:inline-block; width:0; height:0;
@@ -129,14 +122,17 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
         let isOpen = isActive || isAncestor;
         if (isOpen) arrow.style.transform = 'rotate(90deg)';
 
-        // Children container
+        // CSS Grid collapsible: 0fr ↔ 1fr for smooth animation
         const childBox = document.createElement('div');
-        childBox.style.cssText = `overflow:hidden; max-height:${isOpen ? '2000px' : '0'}; transition:max-height 0.25s ease; padding-left:1rem;`;
+        childBox.style.cssText = `display:grid; grid-template-rows:${isOpen ? '1fr' : '0fr'}; transition:grid-template-rows 0.3s ease;`;
+        const childInner = document.createElement('div');
+        childInner.style.cssText = 'overflow:hidden; padding-left:1rem;';
+        childBox.appendChild(childInner);
 
         iconCol.addEventListener('click', (e) => {
           e.stopPropagation();
           isOpen = !isOpen;
-          childBox.style.maxHeight = isOpen ? '2000px' : '0';
+          childBox.style.gridTemplateRows = isOpen ? '1fr' : '0fr';
           arrow.style.transform = isOpen ? 'rotate(90deg)' : '';
         });
 
@@ -144,20 +140,19 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
 
         const link = document.createElement('a');
         link.href = node.url;
-        link.textContent = node.title;
+        link.textContent = displayName(node);
         link.style.cssText = `display:block; padding:0.3rem 0; font-size:0.875rem; flex:1; min-width:0; transition:opacity 0.15s; ${isActive ? 'font-weight:600; color:var(--accent);' : 'color:var(--text);'}`;
         row.appendChild(link);
         container.appendChild(row);
 
-        node.children.forEach((child: any) => renderNode(child, childBox));
+        node.children.forEach((child: any) => renderNode(child, childInner));
         container.appendChild(childBox);
       } else {
-        // Leaf node: empty icon column for alignment
         row.appendChild(iconCol);
 
         const link = document.createElement('a');
         link.href = node.url;
-        link.textContent = node.title;
+        link.textContent = displayName(node);
         link.style.cssText = `display:block; padding:0.3rem 0; font-size:0.8125rem; flex:1; min-width:0; transition:opacity 0.15s; ${isActive ? 'font-weight:600; color:var(--accent);' : 'color:var(--text); opacity:0.85;'}`;
         row.appendChild(link);
         container.appendChild(row);
