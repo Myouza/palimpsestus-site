@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.DS_Store
+*.log
+.env
+.env.*
+
+# Uncomment the next line after setting up the private content repo,
+# to prevent accidentally pushing content to the public framework repo:
+# src/content/novel/

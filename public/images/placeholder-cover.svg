@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <rect width="800" height="400" fill="#EDE9E0"/>
+  <rect x="1" y="1" width="798" height="398" stroke="#D4CFC6" stroke-width="2" fill="none"/>
+  <text x="400" y="190" text-anchor="middle" font-family="serif" font-size="24" fill="#8B4513" opacity="0.4">插图占位</text>
+  <text x="400" y="225" text-anchor="middle" font-family="serif" font-size="14" fill="#6B6560" opacity="0.4">Cover Placeholder</text>
+  <line x1="350" y1="250" x2="450" y2="250" stroke="#D4CFC6" stroke-width="1"/>
+</svg>

@@ -1,0 +1,25 @@
+---
+import { site } from '@/config/site';
+---
+
+<footer class="mt-auto pt-12 pb-8 text-center text-sm" style="color: var(--text-muted);">
+  <div class="max-w-2xl mx-auto px-4 space-y-2">
+    <div class="flex items-center justify-center gap-2">
+      <a href={site.licenseUrl} target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 hover:opacity-80 transition-opacity"
+        style="color: var(--text-muted);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M15 9.354a4 4 0 1 0 0 5.292"/>
+        </svg>
+        {site.license}
+      </a>
+    </div>
+    <p>© {site.copyrightYear} {site.author}</p>
+    <p>
+      <a href={site.icpUrl} target="_blank" rel="noopener noreferrer"
+        class="hover:opacity-80 transition-opacity" style="color: var(--text-muted);">
+        {site.icp}
+      </a>
+    </p>
+  </div>
+</footer>

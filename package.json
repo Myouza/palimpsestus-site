@@ -1,0 +1,22 @@
+{
+  "name": "palimpsestus-site",
+  "version": "1.0.0",
+  "description": "六宫月影 Palimpsestus — Personal literary website",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "author": "Myouza",
+  "license": "CC-BY-NC-SA-4.0",
+  "private": true,
+  "dependencies": {
+    "@astrojs/mdx": "^4.3.13",
+    "@astrojs/tailwind": "^6.0.2",
+    "@tailwindcss/typography": "^0.5.19",
+    "astro": "^5.17.3",
+    "tailwindcss": "^3.4.19"
+  }
+}

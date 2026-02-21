@@ -1,0 +1,76 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import { site } from '@/config/site';
+import Footer from '@/components/Footer.astro';
+import ReaderSettings from '@/components/ReaderSettings.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = site.description } = Astro.props;
+const fullTitle = title === site.name ? site.fullName : `${title} — ${site.name}`;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="author" content={site.author} />
+    <meta name="robots" content="noai, noimageai" />
+    <title>{fullTitle}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <ClientRouter />
+
+    <!--
+      Theme initialization: runs BEFORE first paint to prevent FOUC.
+      Also registers astro:before-swap to persist state across navigations.
+    -->
+    <script is:inline>
+      (function () {
+        // Initialize global state.
+        // Try localStorage first (survives page refresh), then defaults.
+        if (typeof window.__palimpsestus === 'undefined') {
+          var saved = {};
+          try { saved = JSON.parse(localStorage.getItem('palimpsestus-settings') || '{}'); } catch(e) {}
+          window.__palimpsestus = {
+            theme: saved.theme || 'paper',
+            fontSize: saved.fontSize || 'medium',
+            fontFamily: saved.fontFamily || 'serif',
+            sidenotesAutoOpen: saved.sidenotesAutoOpen || false,
+          };
+        }
+
+        // Apply state to current document
+        function applyState(doc) {
+          var s = window.__palimpsestus;
+          var el = doc.documentElement || doc;
+          el.setAttribute('data-theme', s.theme);
+          el.setAttribute('data-fontsize', s.fontSize);
+          el.setAttribute('data-fontfamily', s.fontFamily);
+        }
+
+        // Apply on initial load
+        applyState(document);
+
+        // CRITICAL: Apply to NEW document BEFORE it replaces the current one.
+        // This prevents the flash of default theme during View Transitions.
+        document.addEventListener('astro:before-swap', function (e) {
+          applyState(e.newDocument);
+        });
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <slot />
+    <Footer />
+    <ReaderSettings />
+  </body>
+</html>

@@ -1,0 +1,135 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { site } from '@/config/site';
+import { buildNavigation } from '@/lib/tree';
+
+const entries = await getCollection('novel');
+const { chapters } = buildNavigation(entries);
+
+const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
+  return { id: n.id, title: n.title, url: n.url, depth: n.depth, hasChildren: n.hasChildren, children: n.children.map(ser) };
+}));
+---
+
+<BaseLayout title={site.name}>
+  <main class="flex-1 max-w-2xl mx-auto w-full px-6 pt-20 pb-12">
+    <header class="text-center mb-16">
+      <h1 class="text-3xl font-semibold mb-2 tracking-wide" style="color: var(--text);">{site.name}</h1>
+      <p class="text-sm tracking-[0.3em]" style="color: var(--text-muted);">{site.nameEn.toUpperCase()}</p>
+      <div class="mt-6 mx-auto w-16" style="border-top: 1px solid var(--border);"></div>
+    </header>
+
+    <nav id="home-toc" aria-label={site.name}></nav>
+  </main>
+
+  <script is:inline define:vars={{ chaptersJson }}>
+    window.__homeTocData = chaptersJson;
+  </script>
+
+  <script>
+    function initHomeToc() {
+      const container = document.getElementById('home-toc');
+      if (!container) return;
+      const raw = (window as any).__homeTocData;
+      if (!raw) return;
+      const chapters = JSON.parse(raw);
+      container.innerHTML = '';
+
+      /**
+       * Render all descendants with proper indentation.
+       * depth=0 is the chapter itself (not rendered here since it's the parent).
+       * Children start at depth=1 relative to chapter.
+       */
+      function renderSubtree(nodes: any[], parent: HTMLElement) {
+        nodes.forEach((node: any) => {
+          const row = document.createElement('div');
+          row.style.cssText = `display:flex; align-items:center; padding-left:${(node.depth) * 1.25}rem;`;
+
+          // Dot prefix for all children
+          const dot = document.createElement('span');
+          dot.style.cssText = 'width:1rem; flex-shrink:0; text-align:center; opacity:0.3; color:var(--text-muted); font-size:0.8rem;';
+          dot.textContent = '·';
+          row.appendChild(dot);
+
+          const link = document.createElement('a');
+          link.href = node.url;
+          link.textContent = node.title;
+          link.style.cssText = `display:block; padding:0.35rem 0; color:var(--text); transition:opacity 0.15s; font-size:${node.depth <= 1 ? '0.95rem' : '0.875rem'};`;
+          link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
+          link.addEventListener('mouseleave', () => link.style.opacity = '1');
+          row.appendChild(link);
+          parent.appendChild(row);
+
+          if (node.children && node.children.length > 0) {
+            renderSubtree(node.children, parent);
+          }
+        });
+      }
+
+      chapters.forEach((ch: any) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; padding:0.5rem 0;';
+
+        // Icon column: fixed width for alignment
+        const iconCol = document.createElement('span');
+        iconCol.style.cssText = 'width:1.25rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;';
+
+        if (ch.hasChildren) {
+          const arrow = document.createElement('span');
+          arrow.style.cssText = `
+            display:inline-block; width:0; height:0;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-left: 6px solid var(--text-muted);
+            transition: transform 0.2s ease;
+            cursor: pointer;
+          `;
+          iconCol.appendChild(arrow);
+          iconCol.style.cursor = 'pointer';
+          row.appendChild(iconCol);
+
+          const link = document.createElement('a');
+          link.href = ch.url;
+          link.textContent = ch.title;
+          link.style.cssText = 'font-size:1.05rem; font-weight:500; color:var(--text); transition:opacity 0.15s; flex:1;';
+          link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
+          link.addEventListener('mouseleave', () => link.style.opacity = '1');
+          row.appendChild(link);
+          container.appendChild(row);
+
+          // Children container
+          const childBox = document.createElement('div');
+          childBox.style.cssText = 'overflow:hidden; max-height:0; transition:max-height 0.3s ease;';
+          container.appendChild(childBox);
+
+          let isOpen = false;
+          iconCol.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isOpen = !isOpen;
+            if (isOpen && childBox.children.length === 0) {
+              renderSubtree(ch.children, childBox);
+            }
+            childBox.style.maxHeight = isOpen ? '4000px' : '0';
+            arrow.style.transform = isOpen ? 'rotate(90deg)' : '';
+          });
+        } else {
+          // No children — empty icon space for alignment
+          row.appendChild(iconCol);
+
+          const link = document.createElement('a');
+          link.href = ch.url;
+          link.textContent = ch.title;
+          link.style.cssText = 'font-size:1.05rem; font-weight:500; color:var(--text); transition:opacity 0.15s; flex:1;';
+          link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
+          link.addEventListener('mouseleave', () => link.style.opacity = '1');
+          row.appendChild(link);
+          container.appendChild(row);
+        }
+      });
+    }
+
+    initHomeToc();
+    document.addEventListener('astro:after-swap', initHomeToc);
+  </script>
+</BaseLayout>

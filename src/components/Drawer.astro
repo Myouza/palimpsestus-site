@@ -1,0 +1,178 @@
+---
+import { site, ui } from '@/config/site';
+import type { TreeNode } from '@/lib/tree';
+
+interface Props {
+  chapters: TreeNode[];
+}
+
+const { chapters } = Astro.props;
+
+// Serialize once for all pages — currentId is derived from URL at runtime
+const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
+  return {
+    id: n.id, title: n.title, url: n.url, depth: n.depth,
+    hasChildren: n.hasChildren, isChapter: n.isChapter,
+    children: n.children.map(ser),
+  };
+}));
+---
+
+<button id="drawer-toggle"
+  class="fixed top-4 left-4 z-50 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+  style="background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border);"
+  aria-label={ui.nav.openDrawer} title={ui.nav.drawerTitle}>
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<div id="drawer-overlay"></div>
+
+<aside id="drawer-panel"
+  class="fixed top-0 left-0 h-full z-50 overflow-y-auto transform -translate-x-full transition-transform duration-300 ease-out"
+  style={`width: var(--drawer-width); background: var(--bg); border-right: 1px solid var(--border);`}>
+  <div class="p-6 pt-8">
+    <a href="/" class="block mb-6">
+      <h2 class="text-lg font-semibold" style="color: var(--text);">{site.name}</h2>
+      <span class="text-xs tracking-widest" style="color: var(--text-muted);">{site.nameEn.toUpperCase()}</span>
+    </a>
+    <hr style="border-color: var(--border);" class="mb-4" />
+    <nav id="drawer-nav"></nav>
+  </div>
+</aside>
+
+{/* Store tree data globally so it survives View Transitions */}
+<script is:inline define:vars={{ treeData }}>
+  window.__palimpsestusTree = treeData;
+</script>
+
+<script>
+  /**
+   * Derive the content ID from the current URL pathname.
+   * "/01/07/00/" → "01/07-00"
+   */
+  function urlToId(pathname: string): string {
+    const parts = pathname.replace(/^\/|\/$/g, '').split('/');
+    if (parts.length < 2) return '';
+    const volume = parts[0];
+    const rest = parts.slice(1).join('-');
+    return `${volume}/${rest}`;
+  }
+
+  /**
+   * Check if nodeId is an ancestor of targetId.
+   * "01/01" is ancestor of "01/01-00" and "01/01-00-01"
+   */
+  function isAncestorOf(ancestorId: string, targetId: string): boolean {
+    if (!ancestorId || !targetId) return false;
+    const aSection = ancestorId.replace(/^[^/]+\//, '');
+    const tSection = targetId.replace(/^[^/]+\//, '');
+    return tSection.startsWith(aSection + '-');
+  }
+
+  function initDrawer() {
+    const toggle = document.getElementById('drawer-toggle');
+    const panel = document.getElementById('drawer-panel');
+    const overlay = document.getElementById('drawer-overlay');
+    const nav = document.getElementById('drawer-nav');
+    if (!toggle || !panel || !overlay || !nav) return;
+
+    const raw = (window as any).__palimpsestusTree;
+    if (!raw) return;
+    const chapters = JSON.parse(raw);
+    const currentId = urlToId(window.location.pathname);
+
+    // Drawer open/close
+    function openDrawer() { panel!.classList.remove('-translate-x-full'); overlay!.classList.add('active'); }
+    function closeDrawer() { panel!.classList.add('-translate-x-full'); overlay!.classList.remove('active'); }
+
+    // Remove old listeners by cloning
+    const newToggle = toggle.cloneNode(true);
+    toggle.parentNode?.replaceChild(newToggle, toggle);
+    newToggle.addEventListener('click', () => panel.classList.contains('-translate-x-full') ? openDrawer() : closeDrawer());
+
+    const newOverlay = overlay.cloneNode(true);
+    overlay.parentNode?.replaceChild(newOverlay, overlay);
+    newOverlay.addEventListener('click', closeDrawer);
+
+    // Render tree
+    nav.innerHTML = '';
+
+    function renderNode(node: any, container: HTMLElement) {
+      const isActive = node.id === currentId;
+      const isAncestor = isAncestorOf(node.id, currentId);
+
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+
+      // Icon column: fixed width for alignment.
+      // All items get this spacer so text aligns consistently.
+      const iconCol = document.createElement('span');
+      iconCol.style.cssText = 'width:1rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;';
+
+      if (node.hasChildren) {
+        // CSS triangle
+        const arrow = document.createElement('span');
+        arrow.style.cssText = `
+          display:inline-block; width:0; height:0;
+          border-top: 4px solid transparent;
+          border-bottom: 4px solid transparent;
+          border-left: 5px solid var(--text-muted);
+          transition: transform 0.2s ease;
+          cursor: pointer;
+        `;
+        iconCol.appendChild(arrow);
+        iconCol.style.cursor = 'pointer';
+
+        let isOpen = isActive || isAncestor;
+        if (isOpen) arrow.style.transform = 'rotate(90deg)';
+
+        // Children container
+        const childBox = document.createElement('div');
+        childBox.style.cssText = `overflow:hidden; max-height:${isOpen ? '2000px' : '0'}; transition:max-height 0.25s ease; padding-left:1rem;`;
+
+        iconCol.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isOpen = !isOpen;
+          childBox.style.maxHeight = isOpen ? '2000px' : '0';
+          arrow.style.transform = isOpen ? 'rotate(90deg)' : '';
+        });
+
+        row.appendChild(iconCol);
+
+        const link = document.createElement('a');
+        link.href = node.url;
+        link.textContent = node.title;
+        link.style.cssText = `display:block; padding:0.3rem 0; font-size:0.875rem; flex:1; min-width:0; transition:opacity 0.15s; ${isActive ? 'font-weight:600; color:var(--accent);' : 'color:var(--text);'}`;
+        row.appendChild(link);
+        container.appendChild(row);
+
+        node.children.forEach((child: any) => renderNode(child, childBox));
+        container.appendChild(childBox);
+      } else {
+        // Leaf node: empty icon column for alignment
+        row.appendChild(iconCol);
+
+        const link = document.createElement('a');
+        link.href = node.url;
+        link.textContent = node.title;
+        link.style.cssText = `display:block; padding:0.3rem 0; font-size:0.8125rem; flex:1; min-width:0; transition:opacity 0.15s; ${isActive ? 'font-weight:600; color:var(--accent);' : 'color:var(--text); opacity:0.85;'}`;
+        row.appendChild(link);
+        container.appendChild(row);
+      }
+    }
+
+    chapters.forEach((ch: any) => renderNode(ch, nav));
+  }
+
+  initDrawer();
+  document.addEventListener('astro:after-swap', initDrawer);
+  document.addEventListener('astro:before-swap', () => {
+    const panel = document.getElementById('drawer-panel');
+    const overlay = document.getElementById('drawer-overlay');
+    if (panel) panel.classList.add('-translate-x-full');
+    if (overlay) overlay.classList.remove('active');
+  });
+</script>

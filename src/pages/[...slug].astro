@@ -1,0 +1,133 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+import ChapterHeader from '@/components/ChapterHeader.astro';
+import ChapterToc from '@/components/ChapterToc.astro';
+import Drawer from '@/components/Drawer.astro';
+import Pagination from '@/components/Pagination.astro';
+import ReadingProgress from '@/components/ReadingProgress.astro';
+import { site, ui } from '@/config/site';
+import { buildNavigation, getReadingOrder, flattenTree } from '@/lib/tree';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('novel');
+  const { chapters, flatList } = buildNavigation(entries);
+
+  const paths = [];
+
+  for (const entry of entries) {
+    if (entry.data.draft) continue;
+    const slashIdx = entry.id.indexOf('/');
+    const volume = entry.id.substring(0, slashIdx);
+    const sectionPart = entry.id.substring(slashIdx + 1);
+    const slugSegments = [volume, ...sectionPart.split('-')];
+
+    paths.push({
+      params: { slug: slugSegments.join('/') },
+      props: { entry, chapters, flatList },
+    });
+  }
+
+  // Volume index (/01/) — redirect to home
+  const volumes = new Set(entries.map(e => e.id.substring(0, e.id.indexOf('/'))));
+  for (const vol of volumes) {
+    paths.push({
+      params: { slug: vol },
+      props: { entry: null, chapters, flatList, volumeRedirect: true },
+    });
+  }
+
+  return paths;
+}
+
+const { entry, chapters, flatList, volumeRedirect } = Astro.props;
+
+if (volumeRedirect) {
+  return Astro.redirect('/');
+}
+
+const currentNode = flatList.find((n: any) => n.id === entry.id);
+const readingOrder = getReadingOrder(flatList, entry.id);
+const isChapter = entry.data.isChapter || false;
+
+// Find parent chapter for breadcrumb
+function findChapterParent(nodeId: string) {
+  const slashIdx = nodeId.indexOf('/');
+  const volume = nodeId.substring(0, slashIdx);
+  const sectionPart = nodeId.substring(slashIdx + 1);
+  const topSection = sectionPart.split('-')[0];
+  const parentId = `${volume}/${topSection}`;
+  return flatList.find((n: any) => n.id === parentId);
+}
+
+const chapterParent = currentNode?.depth > 0 ? findChapterParent(entry.id) : null;
+
+const rendered = await render(entry);
+const Content = rendered.Content;
+
+// Check if the MDX body has meaningful content (not just whitespace/imports)
+const rawBody = rendered.metadata?.source || '';
+---
+
+<BaseLayout title={entry.data.title}>
+  <ReadingProgress />
+  <Drawer chapters={chapters} />
+
+  <main class="flex-1 w-full px-6 pt-20 pb-12" style="view-transition-name: main-content;">
+    <div class="article-layout">
+
+      {/* Breadcrumb — consistent position for all pages */}
+      {isChapter ? (
+        <Breadcrumb
+          chapterTitle={entry.data.title}
+          chapterUrl={currentNode?.url || '/'}
+          isCurrentChapter={true}
+        />
+      ) : (
+        <Breadcrumb
+          chapterTitle={chapterParent?.title || ''}
+          chapterUrl={chapterParent?.url || '/'}
+          breadcrumb={entry.data.breadcrumb}
+          nodeId={entry.id}
+        />
+      )}
+
+      {/* Title area */}
+      {isChapter ? (
+        <>
+          <ChapterHeader
+            title={entry.data.title}
+            chapterLabel={entry.data.chapterLabel}
+            subtitle={entry.data.subtitle}
+            subtitleSegments={entry.data.subtitleSegments}
+            coverImage={entry.data.coverImage}
+          />
+
+          {/* Chapter body content */}
+          <article class="prose max-w-none">
+            <Content />
+          </article>
+
+          {/* Chapter child TOC */}
+          {currentNode?.hasChildren && (
+            <ChapterToc nodes={currentNode.children} />
+          )}
+        </>
+      ) : (
+        <>
+          <h1 class="text-2xl font-semibold mb-10" style="color: var(--text);">{entry.data.title}</h1>
+
+          <article class="prose max-w-none">
+            <Content />
+          </article>
+        </>
+      )}
+
+      {/* Pagination — consistent position */}
+      {readingOrder && (
+        <Pagination prev={readingOrder.prev} next={readingOrder.next} />
+      )}
+    </div>
+  </main>
+</BaseLayout>

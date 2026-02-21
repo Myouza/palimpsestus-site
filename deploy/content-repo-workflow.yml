@@ -1,0 +1,27 @@
+# notify-framework.yml — Trigger framework repo build on content update
+#
+# Place this file in the PRIVATE content repo at:
+#   .github/workflows/notify-framework.yml
+#
+# Required secrets in the PRIVATE repo:
+#   FRAMEWORK_DISPATCH_TOKEN — GitHub Personal Access Token with
+#     'repo' scope for the public framework repo
+
+name: Notify Framework
+
+on:
+  push:
+    branches: [main, preview]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger framework build
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.FRAMEWORK_DISPATCH_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ secrets.FRAMEWORK_REPO }}/dispatches \
+            -d '{"event_type": "content-update", "client_payload": {"branch": "${{ github.ref_name }}"}}'
+        # FRAMEWORK_REPO should be set to e.g. "myouza/palimpsestus-site"

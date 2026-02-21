@@ -1,0 +1,31 @@
+---
+import { ui } from '@/config/site';
+import type { TreeNode } from '@/lib/tree';
+
+interface Props {
+  prev: TreeNode | null;
+  next: TreeNode | null;
+}
+
+const { prev, next } = Astro.props;
+---
+
+<nav class="mt-16 pt-6 flex justify-between items-stretch gap-4"
+  style="border-top: 1px solid var(--border);" aria-label="章节翻页">
+  {prev ? (
+    <a href={prev.url}
+      class="flex-1 flex flex-col items-start py-3 px-4 rounded-lg transition-all duration-200 hover:opacity-80"
+      style="background: var(--bg-surface);">
+      <span class="text-xs mb-1" style="color: var(--text-muted);">{ui.nav.prevArrow} {ui.nav.prevSection}</span>
+      <span class="text-sm" style="color: var(--text);">{prev.title}</span>
+    </a>
+  ) : <div class="flex-1"></div>}
+  {next ? (
+    <a href={next.url}
+      class="flex-1 flex flex-col items-end py-3 px-4 rounded-lg transition-all duration-200 hover:opacity-80 text-right"
+      style="background: var(--bg-surface);">
+      <span class="text-xs mb-1" style="color: var(--text-muted);">{ui.nav.nextSection} {ui.nav.nextArrow}</span>
+      <span class="text-sm" style="color: var(--text);">{next.title}</span>
+    </a>
+  ) : <div class="flex-1"></div>}
+</nav>

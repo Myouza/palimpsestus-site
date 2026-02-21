@@ -1,0 +1,79 @@
+---
+/**
+ * Sidenote — inline annotation component.
+ *
+ * Usage in MDX:
+ *   正文<Sidenote trigger="需要注释的文字">这里是注释内容，可以很长。</Sidenote>正文继续。
+ *
+ * The trigger text appears inline with a dashed underline.
+ * Clicking it toggles the annotation open/closed.
+ * The slot content is the annotation itself.
+ */
+
+interface Props {
+  trigger: string;
+}
+
+const { trigger } = Astro.props;
+---
+
+<span class="sidenote-wrapper">
+  <span class="sidenote-trigger" role="button" tabindex="0">{trigger}</span>
+  <span class="sidenote-content">
+    <slot />
+  </span>
+</span>
+
+<script>
+  /**
+   * Sidenote interaction logic.
+   *
+   * Individual click: toggle this sidenote.
+   * Global auto-open: on page load, open all if preference is set.
+   *
+   * State machine per sidenote:
+   *   default  ──click──→  active (open, trigger highlighted)
+   *   active   ──click──→  default (closed, trigger normal)
+   *   global ON  ──→  all become active
+   *   global OFF ──→  all become default
+   */
+
+  function initSidenotes() {
+    document.querySelectorAll('.sidenote-trigger').forEach((trigger) => {
+      // Remove any old listeners (prevent duplicates after View Transition)
+      const newTrigger = trigger.cloneNode(true);
+      trigger.parentNode?.replaceChild(newTrigger, trigger);
+
+      newTrigger.addEventListener('click', () => {
+        const content = newTrigger.nextElementSibling;
+        if (!content) return;
+        const isOpen = content.classList.contains('open');
+        if (isOpen) {
+          content.classList.remove('open');
+          newTrigger.classList.remove('active');
+        } else {
+          content.classList.add('open');
+          newTrigger.classList.add('active');
+        }
+      });
+
+      // Keyboard accessibility
+      newTrigger.addEventListener('keydown', (e: Event) => {
+        if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
+          e.preventDefault();
+          (newTrigger as HTMLElement).click();
+        }
+      });
+    });
+
+    // Apply global auto-open preference
+    const state = (window as any).__palimpsestus;
+    if (state && state.sidenotesAutoOpen) {
+      document.querySelectorAll('.sidenote-content').forEach(el => el.classList.add('open'));
+      document.querySelectorAll('.sidenote-trigger').forEach(el => el.classList.add('active'));
+    }
+  }
+
+  initSidenotes();
+  document.addEventListener('astro:after-swap', initSidenotes);
+</script>

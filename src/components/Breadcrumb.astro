@@ -1,0 +1,64 @@
+---
+import { ui } from '@/config/site';
+
+interface Props {
+  /** For chapter pages: just the chapter title (displayed as current) */
+  /** For section pages: the parent chapter's title */
+  chapterTitle: string;
+  chapterUrl: string;
+  /** Section breadcrumb trail (empty for chapter pages) */
+  breadcrumb?: string[];
+  /** The full content ID (e.g. "01/01-00-00") */
+  nodeId?: string;
+  /** If true, this is a chapter page and chapterTitle is the current page */
+  isCurrentChapter?: boolean;
+}
+
+const { chapterTitle, chapterUrl, breadcrumb = [], nodeId = '', isCurrentChapter = false } = Astro.props;
+const sep = ui.nav.breadcrumbSep;
+
+function buildCrumbs() {
+  if (!nodeId || breadcrumb.length === 0) return [];
+  const slashIdx = nodeId.indexOf('/');
+  const sectionPart = nodeId.substring(slashIdx + 1);
+  const allSegments = sectionPart.split('-');
+  const volume = nodeId.substring(0, slashIdx);
+  const chapterSeg = allSegments[0];
+
+  return breadcrumb.map((label, i) => {
+    const subSegments = allSegments.slice(1, 1 + i + 1);
+    const url = `/${volume}/${chapterSeg}/${subSegments.join('/')}/`;
+    const isCurrent = i === breadcrumb.length - 1;
+    return { label, url, isCurrent };
+  });
+}
+
+const crumbs = buildCrumbs();
+---
+
+<nav class="text-xs tracking-wide mb-8 flex flex-wrap items-center gap-1"
+  style="color: var(--text-muted);" aria-label={ui.nav.toc}>
+  <a href="/" class="hover:opacity-70 transition-opacity">{ui.nav.home}</a>
+
+  {isCurrentChapter ? (
+    <>
+      <span class="opacity-40">{sep}</span>
+      <span style="color: var(--text);">{chapterTitle}</span>
+    </>
+  ) : (
+    <>
+      <span class="opacity-40">{sep}</span>
+      <a href={chapterUrl} class="hover:opacity-70 transition-opacity">{chapterTitle}</a>
+      {crumbs.map(({ label, url, isCurrent }) => (
+        <>
+          <span class="opacity-40">{sep}</span>
+          {isCurrent ? (
+            <span style="color: var(--text);">{label}</span>
+          ) : (
+            <a href={url} class="hover:opacity-70 transition-opacity">{label}</a>
+          )}
+        </>
+      ))}
+    </>
+  )}
+</nav>

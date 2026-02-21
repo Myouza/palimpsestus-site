@@ -1,0 +1,23 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: palimpsestus-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Static site files (CI/CD deploys here via rsync)
+      - /var/www/production:/var/www/production:ro
+      - /var/www/staging:/var/www/staging:ro
+      # Nginx configuration
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # SSL certificates (uploaded from Tencent Cloud)
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      # htpasswd for staging Basic Auth
+      - ./nginx/htpasswd:/etc/nginx/htpasswd:ro
+      # Log files
+      - ./logs/nginx:/var/log/nginx
+    environment:
+      - TZ=Asia/Shanghai

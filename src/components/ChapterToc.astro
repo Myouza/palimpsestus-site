@@ -1,0 +1,32 @@
+---
+/**
+ * Collapsible chapter TOC rendered on chapter pages.
+ * Default: expanded (shows full tree).
+ * Can be toggled closed.
+ */
+import type { TreeNode } from '@/lib/tree';
+import { flattenTree } from '@/lib/tree';
+
+interface Props {
+  nodes: TreeNode[];
+}
+
+const { nodes } = Astro.props;
+const flatNodes = flattenTree(nodes);
+---
+
+{flatNodes.length > 0 && (
+  <div class="chapter-toc-wrapper" style="margin-top: 1.5rem;">
+    <nav class="chapter-toc">
+      {flatNodes.map((node) => (
+        <a href={node.url}
+          class="chapter-toc-item"
+          style={`padding-left: ${node.depth * 1.25}rem;`}
+          data-depth={node.depth}>
+          <span class="chapter-toc-dot">·</span>
+          <span>{node.title}</span>
+        </a>
+      ))}
+    </nav>
+  </div>
+)}

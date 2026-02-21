@@ -1,0 +1,119 @@
+# deploy.yml — Build & Deploy Palimpsestus
+#
+# Triggers:
+#   1. Push to main → deploy to production
+#   2. Push to preview → deploy to staging
+#   3. repository_dispatch from private content repo
+#      (payload.branch determines target: main→prod, preview→staging)
+
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main, preview]
+  repository_dispatch:
+    types: [content-update]
+
+# Prevent concurrent deployments to the same target
+concurrency:
+  group: deploy-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Determine deployment target ──
+      - name: Set deployment target
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            BRANCH="${{ github.event.client_payload.branch }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+
+          if [ "$BRANCH" = "main" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "deploy_path=/var/www/production" >> $GITHUB_OUTPUT
+            echo "content_ref=main" >> $GITHUB_OUTPUT
+          elif [ "$BRANCH" = "preview" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "deploy_path=/var/www/staging" >> $GITHUB_OUTPUT
+            echo "content_ref=preview" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown branch: $BRANCH"
+            exit 1
+          fi
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      # ── Checkout framework (this public repo) ──
+      - name: Checkout framework
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.branch }}
+
+      # ── Checkout content (private repo) ──
+      - name: Checkout content
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CONTENT_REPO }}  # e.g., "myouza/palimpsestus-content"
+          ref: ${{ steps.target.outputs.content_ref }}
+          ssh-key: ${{ secrets.CONTENT_DEPLOY_KEY }}
+          path: _content
+
+      # ── Merge content into framework ──
+      - name: Copy content into src/content/novel
+        run: |
+          rm -rf src/content/novel
+          mkdir -p src/content/novel
+          # Copy all volume folders (01/, 02/, etc.)
+          cp -r _content/[0-9]*/ src/content/novel/ 2>/dev/null || true
+          # Remove meta.yaml files so Astro doesn't try to parse them as content
+          find src/content/novel -name 'meta.yaml' -delete
+          # Copy assets (images, etc.) if they exist
+          if [ -d "_content/assets" ]; then
+            cp -r _content/assets/ public/assets/
+          fi
+          # Show what we got
+          echo "Content files:"
+          find src/content/novel -name '*.mdx' | sort
+
+      # ── Setup Node.js ──
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── Install & Build ──
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+
+      # ── Deploy via rsync ──
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_SSH_PORT }}" \
+            dist/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ steps.target.outputs.deploy_path }}/
+
+      # ── Summary ──
+      - name: Deployment summary
+        run: |
+          echo "### 🚀 Deployed to ${{ steps.target.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: \`${{ steps.target.outputs.branch }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Target: \`${{ steps.target.outputs.deploy_path }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,11 @@
+---
+title: "其一之二"
+breadcrumb: ["其一", "之二"]
+draft: false
+---
+
+import Sidenote from '@/components/Sidenote.astro';
+
+「其一」下的第二个子节点。与「其一之一」平级，测试同级节点的翻页顺序。
+
+<Sidenote trigger="翻页顺序遵循深度优先遍历">在树状结构中，阅读顺序按深度优先前序遍历（DFS pre-order）排列：先读完一个分支的所有子节点，再进入下一个同级分支。这意味着从「其一之一之一」翻页后到达的是「其一之二」而非「其二」。</Sidenote>

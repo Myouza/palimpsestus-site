@@ -1,0 +1,50 @@
+---
+interface SubtitleSegment {
+  chars: string;
+  note: string;
+}
+
+interface Props {
+  title: string;
+  chapterLabel?: string;
+  subtitle?: string;
+  subtitleSegments?: SubtitleSegment[];
+  coverImage?: string;
+}
+
+const { title, chapterLabel, subtitle, subtitleSegments, coverImage } = Astro.props;
+---
+
+<header class="chapter-header">
+  {chapterLabel && (
+    <div class="chapter-label">{chapterLabel}</div>
+  )}
+
+  <h1 class="chapter-title">{title}</h1>
+
+  {subtitle && !subtitleSegments && (
+    <div class="chapter-subtitle">{subtitle}</div>
+  )}
+
+  {subtitleSegments && subtitleSegments.length > 0 && (
+    <div class="chapter-subtitle">
+      <span class="subtitle-segments">
+        {subtitleSegments.map((seg, i) => (
+          <>
+            {i > 0 && <span class="subtitle-segment-spacer" />}
+            <span class="subtitle-segment">
+              {seg.chars}
+              <span class="subtitle-segment-tooltip">{seg.note}</span>
+            </span>
+          </>
+        ))}
+      </span>
+    </div>
+  )}
+
+  {coverImage && (
+    <img src={coverImage} alt={title} class="chapter-cover" loading="lazy" />
+  )}
+
+  <hr class="chapter-divider" />
+</header>
