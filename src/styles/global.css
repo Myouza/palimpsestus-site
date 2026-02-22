@@ -33,11 +33,61 @@
   font-display: swap;
 }
 
-/* CJK Extension B — build-time subset from NotoSerifCJKsc */
+/* CJK Extension B — build-time subsets from NotoSerifCJKsc per weight.
+   Each weight file is ~2KB, generated only for chars actually used.
+   Missing weight files silently fall back to browser synthesis. */
 @font-face {
   font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif.woff2') format('woff2');
+  src: url('/fonts/CJKExtB-Serif-200.woff2') format('woff2');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20000-2A6DF;
+}
+@font-face {
+  font-family: 'CJKExtB-Serif';
+  src: url('/fonts/CJKExtB-Serif-300.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20000-2A6DF;
+}
+@font-face {
+  font-family: 'CJKExtB-Serif';
+  src: url('/fonts/CJKExtB-Serif-400.woff2') format('woff2');
   font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20000-2A6DF;
+}
+@font-face {
+  font-family: 'CJKExtB-Serif';
+  src: url('/fonts/CJKExtB-Serif-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20000-2A6DF;
+}
+@font-face {
+  font-family: 'CJKExtB-Serif';
+  src: url('/fonts/CJKExtB-Serif-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20000-2A6DF;
+}
+@font-face {
+  font-family: 'CJKExtB-Serif';
+  src: url('/fonts/CJKExtB-Serif-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20000-2A6DF;
+}
+@font-face {
+  font-family: 'CJKExtB-Serif';
+  src: url('/fonts/CJKExtB-Serif-900.woff2') format('woff2');
+  font-weight: 900;
   font-style: normal;
   font-display: swap;
   unicode-range: U+20000-2A6DF;

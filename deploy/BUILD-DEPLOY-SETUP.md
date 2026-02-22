@@ -7,13 +7,18 @@ GitHub push → Actions SSH 到服务器（deploy 用户）→ 服务器本地�
 
 服务器目录结构：
 /opt/palimpsestus/
-├── fonts/                          ← 完整字体（已就位 ✓，ubuntu 所有）
-│   ├── NotoSerifCJKsc-Regular.otf  ← 24MB，思源宋体含扩展B
-│   └── NyushuFengQi.ttf           ← 10MB，女书柳叶衬线体
-├── venv/                           ← Python 虚拟环境（deploy 所有）
-├── repos/                          ← deploy 所有
-│   ├── framework/                  ← palimpsestus-site 仓库
-│   └── content/                    ← 私有内容仓库
+├── fonts/                               ← 完整字体源文件（ubuntu 所有）
+│   ├── NotoSerifCJKsc-ExtraLight.otf    ← 200
+│   ├── NotoSerifCJKsc-Light.otf         ← 300
+│   ├── NotoSerifCJKsc-Regular.otf       ← 400（正文）
+│   ├── NotoSerifCJKsc-Medium.otf        ← 500
+│   ├── NotoSerifCJKsc-SemiBold.otf      ← 600（标题）
+│   ├── NotoSerifCJKsc-Bold.otf          ← 700（加粗）
+│   └── NotoSerifCJKsc-Black.otf         ← 900
+├── venv/                                ← Python 虚拟环境（deploy 所有）
+├── repos/                               ← deploy 所有
+│   ├── framework/                       ← palimpsestus-site 仓库
+│   └── content/                         ← 私有内容仓库
 
 /var/www/                           ← deploy 所有
 ├── production/                     ← main 分支部署目标
@@ -220,10 +225,15 @@ bash scripts/server-deploy.sh main main
 ── Subsetting fonts ──
 Font subsetting for Palimpsestus
 ========================================
-  → CJKExtB-Serif: 1 chars [𨑨]
-    Wrote public/fonts/CJKExtB-Serif.woff2 (1,784 bytes)
-  → NushuSerif: 2 chars [𛅰𛆷]
-    Wrote public/fonts/NushuSerif.woff2 (xxx bytes)
+  Scanning 20 content files...
+  Total rare characters found: 7
+
+  -> CJKExtB-Serif: 7 chars [𠊎𢬦𣍐𤆬𤼵𨑨𨒪]
+    CJKExtB-Serif-400.woff2 (x,xxx bytes)
+    CJKExtB-Serif-600.woff2 (x,xxx bytes)
+    CJKExtB-Serif-700.woff2 (x,xxx bytes)
+    Generated 3 weight variants
+    (更多字重有对应 .otf 的话会一并生成)
 
 ── Building site ──
 ── Deploying to /var/www/production ──
@@ -299,6 +309,9 @@ sudo nginx -t && sudo systemctl reload nginx
 2. 编辑 `scripts/subset-fonts.py` 的 `RANGES` 字典，加一个条目
 3. 编辑 `src/styles/global.css`，加对应的 `@font-face` 和 `unicode-range`
 4. Push，自动生效
+
+注意：NushuSerif（女书）不走子集化流程。`public/fonts/NushuSerif.woff2`（55KB）是官方
+网页字体，直接提交在 Git 仓库里。服务器上的 NyushuFengQi.ttf 可以删除。
 
 ## 故障排查
 

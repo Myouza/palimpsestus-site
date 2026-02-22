@@ -3,8 +3,12 @@
 subset-fonts.py — Build-time font subsetting for Palimpsestus
 
 Scans all MDX content files, identifies characters outside the coverage
-of Google Fonts CDN (CJK Extension B, Nushu), and generates minimal
+of Google Fonts CDN (CJK Extension B, etc.), and generates minimal
 woff2 subsets from full source fonts stored on the server.
+
+Generates one woff2 per (range, weight) combination so that headings,
+body text, and bold all render with the correct native weight rather
+than relying on browser-synthesized faux bold.
 
 Usage:
     python3 subset-fonts.py <content_dir> <output_dir>
@@ -22,25 +26,35 @@ import glob
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Configuration: which character ranges need local font coverage
+# Configuration
 # ---------------------------------------------------------------------------
 FONT_DIR = "/opt/palimpsestus/fonts"
 
+# Character ranges that need local font coverage.
+# Each range can have multiple weight variants.
 RANGES = {
     "CJKExtB-Serif": {
-        "source": os.path.join(FONT_DIR, "NotoSerifCJKsc-Regular.otf"),
         "start": 0x20000,
         "end": 0x2A6DF,
         "label": "CJK Extension B",
+        "weights": {
+            200: "NotoSerifCJKsc-ExtraLight.otf",
+            300: "NotoSerifCJKsc-Light.otf",
+            400: "NotoSerifCJKsc-Regular.otf",
+            500: "NotoSerifCJKsc-Medium.otf",
+            600: "NotoSerifCJKsc-SemiBold.otf",
+            700: "NotoSerifCJKsc-Bold.otf",
+            900: "NotoSerifCJKsc-Black.otf",
+        },
     },
-    # NushuSerif: no longer subsetted here.
+    # NushuSerif: not subsetted here.
     # Using official NyushuSerif-1.0022.woff2 (55KB) directly in public/fonts/.
-    # It includes 396 nüshu chars + 1765 hanzi double-encoded glyphs + full GSUB.
+    # Includes 396 nushu + 1765 hanzi double-encoded glyphs + full GSUB.
 }
 
 
 def scan_content(content_dir: str) -> dict[str, set[str]]:
-    """Scan all MDX/MD files and collect characters per font range."""
+    """Scan all MDX/MD files and collect characters per range."""
     found: dict[str, set[str]] = {name: set() for name in RANGES}
 
     patterns = ["**/*.mdx", "**/*.md"]
@@ -66,48 +80,36 @@ def scan_content(content_dir: str) -> dict[str, set[str]]:
     return found
 
 
-def generate_subset(name: str, chars: set[str], output_dir: str) -> None:
-    """Generate a woff2 subset containing only the specified characters."""
-    cfg = RANGES[name]
-    source = cfg["source"]
-    output = os.path.join(output_dir, f"{name}.woff2")
+def generate_subset(name: str, weight: int, font_file: str,
+                    chars: set[str], output_dir: str) -> None:
+    """Generate a woff2 subset for a specific range + weight."""
+    source = os.path.join(FONT_DIR, font_file)
+    output = os.path.join(output_dir, f"{name}-{weight}.woff2")
 
     if not os.path.exists(source):
-        print(f"  ⚠ Source font not found: {source}")
-        print(f"    Skipping {name} — {cfg['label']} characters will show as fallback")
+        if weight == 400:
+            print(f"  Warning: Source font not found: {source}")
         return
 
     if not chars:
-        print(f"  · {name}: no characters found, skipping")
-        # Remove stale subset if it exists
         if os.path.exists(output):
             os.remove(output)
         return
 
-    # Build unicode list for pyftsubset
-    unicodes = ",".join(f"U+{ord(c):04X}" for c in sorted(chars))
-    char_display = "".join(sorted(chars))
-    print(f"  → {name}: {len(chars)} chars [{char_display}]")
-
-    # Use fonttools programmatically
     from fontTools.subset import Subsetter, Options
     from fontTools.ttLib import TTFont
 
     options = Options()
     options.flavor = "woff2"
     options.desubroutinize = True
-    options.layout_features = []  # We only need glyph outlines, not shaping rules
-    options.layout_closure = False  # Don't compute layout closure
+    options.layout_features = []
+    options.layout_closure = False
     options.drop_tables += ["meta", "GSUB", "GPOS", "GDEF", "MATH"]
 
     font = TTFont(source)
-
-    # Physically remove potentially corrupted OT layout tables BEFORE subsetting.
-    # Some community fonts (e.g. NyushuFengQi) have malformed GSUB/GPOS that crash
-    # fonttools during the pre-subset pruning phase, before drop_tables takes effect.
-    for bad_table in ["GSUB", "GPOS", "GDEF", "MATH"]:
-        if bad_table in font:
-            del font[bad_table]
+    for table in ["GSUB", "GPOS", "GDEF", "MATH"]:
+        if table in font:
+            del font[table]
 
     subsetter = Subsetter(options=options)
     subsetter.populate(unicodes=[ord(c) for c in chars])
@@ -116,7 +118,7 @@ def generate_subset(name: str, chars: set[str], output_dir: str) -> None:
     font.close()
 
     size = os.path.getsize(output)
-    print(f"    Wrote {output} ({size:,} bytes)")
+    print(f"    {name}-{weight}.woff2 ({size:,} bytes)")
 
 
 def main():
@@ -142,8 +144,26 @@ def main():
     print(f"  Total rare characters found: {total}")
     print()
 
-    for name in RANGES:
-        generate_subset(name, found[name], output_dir)
+    for name, cfg in RANGES.items():
+        chars = found[name]
+        if not chars:
+            print(f"  . {name}: no characters found, skipping")
+            continue
+
+        char_display = "".join(sorted(chars))
+        print(f"  -> {name}: {len(chars)} chars [{char_display}]")
+
+        generated = 0
+        for weight, font_file in sorted(cfg["weights"].items()):
+            source = os.path.join(FONT_DIR, font_file)
+            if os.path.exists(source):
+                generate_subset(name, weight, font_file, chars, output_dir)
+                generated += 1
+
+        if generated == 0:
+            print(f"    Warning: No source fonts found in {FONT_DIR}")
+        else:
+            print(f"    Generated {generated} weight variants")
 
     print()
     print("Done.")
