@@ -1,14 +1,17 @@
-# deploy.yml — Build & Deploy Palimpsestus
+# deploy.yml — Trigger server-side build & deploy
 #
 # Triggers:
 #   1. Push to main/preview (framework changes)
 #   2. repository_dispatch from private content repo
 #
 # Logic:
-#   - Framework push: uses pushed branch for both framework & content
-#   - Content dispatch: uses main for framework, payload.branch for content
-#   - main → deploy to production
-#   - preview → deploy to staging
+#   - Determines content_branch and framework_branch
+#   - SSHs into the server and runs server-deploy.sh
+#   - Server handles: git pull, font subsetting, build, deploy
+#
+# Required secrets:
+#   SERVER_HOST, SERVER_SSH_PORT, SERVER_USER, SERVER_SSH_KEY
+#   CONTENT_REPO, CONTENT_DEPLOY_KEY, FRAMEWORK_DISPATCH_TOKEN (content repo)
 
 name: Build & Deploy
 
@@ -23,83 +26,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # ── Determine deployment target ──
+      # ── Determine branches ──
       - name: Set deployment target
         id: target
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            BRANCH="${{ github.event.client_payload.branch }}"
-            # Content dispatch: always use main for framework code
-            FRAMEWORK_REF="main"
+            CONTENT_BRANCH="${{ github.event.client_payload.branch }}"
+            FRAMEWORK_BRANCH="main"
           else
-            BRANCH="${{ github.ref_name }}"
-            # Framework push: use the branch that was pushed
-            FRAMEWORK_REF="${{ github.ref_name }}"
+            CONTENT_BRANCH="${{ github.ref_name }}"
+            FRAMEWORK_BRANCH="${{ github.ref_name }}"
           fi
 
-          if [ "$BRANCH" = "main" ]; then
+          echo "content_branch=$CONTENT_BRANCH" >> $GITHUB_OUTPUT
+          echo "framework_branch=$FRAMEWORK_BRANCH" >> $GITHUB_OUTPUT
+
+          if [ "$CONTENT_BRANCH" = "main" ] && [ "$FRAMEWORK_BRANCH" = "main" ]; then
             echo "environment=production" >> $GITHUB_OUTPUT
-            echo "deploy_path=/var/www/production" >> $GITHUB_OUTPUT
-            echo "content_ref=main" >> $GITHUB_OUTPUT
-          elif [ "$BRANCH" = "preview" ]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
-            echo "deploy_path=/var/www/staging" >> $GITHUB_OUTPUT
-            echo "content_ref=preview" >> $GITHUB_OUTPUT
           else
-            echo "Unknown branch: $BRANCH"
-            exit 1
+            echo "environment=staging" >> $GITHUB_OUTPUT
           fi
 
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-          echo "framework_ref=$FRAMEWORK_REF" >> $GITHUB_OUTPUT
-
-      # ── Checkout framework ──
-      - name: Checkout framework
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.target.outputs.framework_ref }}
-
-      # ── Checkout content (private repo) ──
-      - name: Checkout content
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ secrets.CONTENT_REPO }}
-          ref: ${{ steps.target.outputs.content_ref }}
-          ssh-key: ${{ secrets.CONTENT_DEPLOY_KEY }}
-          path: _content
-
-      # ── Merge content into framework ──
-      - name: Copy content into src/content/novel
-        run: |
-          rm -rf src/content/novel
-          mkdir -p src/content/novel
-          cp -r _content/[0-9]*/ src/content/novel/ 2>/dev/null || true
-          find src/content/novel -name 'meta.yaml' -delete
-          if [ -d "_content/assets" ]; then
-            cp -r _content/assets/ public/assets/
-          fi
-          echo "Content files:"
-          find src/content/novel -name '*.mdx' | sort
-
-      # ── Setup Node.js ──
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      # ── Install & Build ──
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build site
-        run: npm run build
-
-      # ── Deploy via rsync ──
+      # ── SSH to server and run deploy ──
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -107,18 +59,18 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to server
+      - name: Deploy via SSH
         run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_SSH_PORT }}" \
-            dist/ \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ steps.target.outputs.deploy_path }}/
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_SSH_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "bash /opt/palimpsestus/repos/framework/scripts/server-deploy.sh \
+              ${{ steps.target.outputs.content_branch }} \
+              ${{ steps.target.outputs.framework_branch }}"
 
       # ── Summary ──
       - name: Deployment summary
         run: |
           echo "### 🚀 Deployed to ${{ steps.target.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Framework: \`${{ steps.target.outputs.framework_ref }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Content: \`${{ steps.target.outputs.content_ref }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Target: \`${{ steps.target.outputs.deploy_path }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Framework: \`${{ steps.target.outputs.framework_branch }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Content: \`${{ steps.target.outputs.content_branch }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Trigger: \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY

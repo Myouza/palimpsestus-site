@@ -43,7 +43,6 @@ const fullTitle = title === site.name ? site.fullName : `${title} — ${site.nam
           window.__palimpsestus = {
             theme: saved.theme || 'paper',
             fontSize: saved.fontSize || 'medium',
-            fontFamily: saved.fontFamily || 'serif',
             sidenotesAutoOpen: saved.sidenotesAutoOpen || false,
           };
         }
@@ -54,7 +53,6 @@ const fullTitle = title === site.name ? site.fullName : `${title} — ${site.nam
           var el = doc.documentElement || doc;
           el.setAttribute('data-theme', s.theme);
           el.setAttribute('data-fontsize', s.fontSize);
-          el.setAttribute('data-fontfamily', s.fontFamily);
         }
 
         // Apply on initial load

@@ -90,8 +90,8 @@ export const themeButtonStyles: Record<string, { bg: string; text: string }> = {
 
 export const typography = {
   fontFamilies: {
-    serif: "'Noto Serif SC', 'Nushu', serif",
-    kai: "'LXGW WenKai', 'Nushu', serif",
+    serif: "'Noto Serif SC', 'CJKExtB-Serif', 'NushuSerif', serif",
+    sans: "'Noto Sans SC', sans-serif",
   },
   fontSizes: {
     small: '1rem',

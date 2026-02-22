@@ -1,21 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================================
-   Fonts
+   Fonts — build-time generated subsets for rare characters
    ============================================================ */
 
 @font-face {
-  font-family: 'Nushu';
-  src: url('/fonts/NotoSansNushu-Regular.woff2') format('woff2');
+  font-family: 'NushuSerif';
+  src: url('/fonts/NushuSerif.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
   unicode-range: U+1B170-1B2FF;
+}
+
+@font-face {
+  font-family: 'CJKExtB-Serif';
+  src: url('/fonts/CJKExtB-Serif.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20000-2A6DF;
 }
 
 /* ============================================================
@@ -36,8 +44,8 @@
   --sidenote-border: #8B4513;
   --selection: rgba(139, 69, 19, 0.15);
   --font-size: 1.125rem;
-  --font-family: 'Noto Serif SC', 'Nushu', serif;
-  --font-family-kai: 'LXGW WenKai', 'Nushu', serif;
+  --font-serif: 'Noto Serif SC', 'CJKExtB-Serif', 'NushuSerif', serif;
+  --font-sans: 'Noto Sans SC', sans-serif;
   --line-height: 1.9;
   --content-max-width: 42rem;
   --sidenote-width: 14rem;
@@ -50,32 +58,30 @@
 [data-theme='white'] {
   --bg: #FAFAFA; --bg-surface: #F0F0F0; --text: #2C2C2C; --text-muted: #666666;
   --border: #E0E0E0; --accent: #8B4513; --link: #8B4513;
-  --sidenote-hint: rgba(139,69,19,0.3); --sidenote-active: #8B4513;
-  --sidenote-bg: #F0F0F0; --sidenote-border: #8B4513; --selection: rgba(139,69,19,0.15);
+  --sidenote-hint: rgba(139,69,19,.3); --sidenote-active: #8B4513;
+  --sidenote-bg: #F0F0F0; --sidenote-border: #8B4513; --selection: rgba(139,69,19,.15);
 }
 
 [data-theme='dark'] {
   --bg: #1A1A1A; --bg-surface: #242424; --text: #D4CFC6; --text-muted: #8A8580;
   --border: #3A3A3A; --accent: #C4875B; --link: #C4875B;
-  --sidenote-hint: rgba(196,135,91,0.35); --sidenote-active: #C4875B;
-  --sidenote-bg: #242424; --sidenote-border: #C4875B; --selection: rgba(196,135,91,0.2);
+  --sidenote-hint: rgba(196,135,91,.35); --sidenote-active: #C4875B;
+  --sidenote-bg: #242424; --sidenote-border: #C4875B; --selection: rgba(196,135,91,.2);
 }
 
 [data-fontsize='small']  { --font-size: 1rem; }
 [data-fontsize='medium'] { --font-size: 1.125rem; }
 [data-fontsize='large']  { --font-size: 1.25rem; }
-[data-fontfamily='serif'] { --font-family: 'Noto Serif SC', 'Nushu', serif; }
-[data-fontfamily='kai']   { --font-family: 'LXGW WenKai', 'Nushu', serif; }
 
 /* ============================================================
-   Base
+   Base — serif everywhere (NYT-style)
    ============================================================ */
 
 html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--bg); color: var(--text);
-  font-family: var(--font-family); font-size: var(--font-size);
+  font-family: var(--font-serif); font-size: var(--font-size);
   line-height: var(--line-height); transition: var(--transition-color);
   -webkit-font-smoothing: antialiased;
 }
@@ -92,7 +98,17 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* ============================================================
-   Prose
+   Functional UI — sans-serif (settings, footer meta)
+   ============================================================ */
+
+#settings-panel,
+#settings-toggle,
+.func-ui {
+  font-family: var(--font-sans);
+}
+
+/* ============================================================
+   Prose — inherits serif from body
    ============================================================ */
 
 .prose {
@@ -104,7 +120,7 @@ body {
   --tw-prose-captions: var(--text-muted); --tw-prose-code: var(--text);
   --tw-prose-pre-code: var(--text); --tw-prose-pre-bg: var(--bg-surface);
   --tw-prose-th-borders: var(--border); --tw-prose-td-borders: var(--border);
-  font-size: var(--font-size); font-family: var(--font-family);
+  font-size: var(--font-size); font-family: var(--font-serif);
   max-width: 100%; line-height: var(--line-height);
 }
 
@@ -118,15 +134,10 @@ body {
 .prose hr { border-color: var(--border); }
 
 /* ============================================================
-   Article Layout
+   Article Layout (sidenotes)
    ============================================================ */
 
-.article-layout {
-  max-width: var(--content-max-width);
-  margin-left: auto;
-  margin-right: auto;
-}
-
+.article-layout { max-width: var(--content-max-width); margin-left: auto; margin-right: auto; }
 @media (min-width: 1200px) {
   .article-layout {
     max-width: calc(var(--content-max-width) + var(--sidenote-gap) + var(--sidenote-width));
@@ -134,221 +145,104 @@ body {
   }
 }
 
-/* ============================================================
-   Sidenotes
-   ============================================================ */
-
 .sidenote-trigger {
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-style: dashed;
-  text-decoration-color: var(--sidenote-hint);
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
-  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  cursor: pointer; text-decoration: underline; text-decoration-style: dashed;
+  text-decoration-color: var(--sidenote-hint); text-underline-offset: 3px;
+  text-decoration-thickness: 1px; transition: color 0.2s ease, text-decoration-color 0.2s ease;
 }
-
-.sidenote-trigger:hover {
-  color: var(--sidenote-active);
-  text-decoration-color: var(--sidenote-active);
-  text-decoration-style: solid;
-}
-
-.sidenote-trigger.active {
-  color: var(--sidenote-active);
-  text-decoration-color: var(--sidenote-active);
+.sidenote-trigger:hover, .sidenote-trigger.active {
+  color: var(--sidenote-active); text-decoration-color: var(--sidenote-active);
   text-decoration-style: solid;
 }
 
 .sidenote-content {
-  display: none;
-  margin: 0.5em 0;
-  padding: 0.75em 1em;
-  background: var(--sidenote-bg);
-  border-left: 2px solid var(--sidenote-border);
-  font-size: 0.9em;
-  color: var(--text-muted);
-  line-height: 1.6;
-  border-radius: 0 4px 4px 0;
-  transition: var(--transition-color);
-  text-indent: 0;
+  display: none; margin: 0.5em 0; padding: 0.75em 1em;
+  background: var(--sidenote-bg); border-left: 2px solid var(--sidenote-border);
+  font-size: 0.9em; color: var(--text-muted); line-height: 1.6;
+  border-radius: 0 4px 4px 0; transition: var(--transition-color); text-indent: 0;
 }
-
 .sidenote-content.open { display: block; }
-
 @media (min-width: 1200px) {
   .sidenote-content.open {
-    float: right;
-    clear: right;
-    width: var(--sidenote-width);
+    float: right; clear: right; width: var(--sidenote-width);
     margin-right: calc(-1 * (var(--sidenote-gap) + var(--sidenote-width)));
-    margin-top: 0;
-    margin-bottom: 0.75em;
-    margin-left: 0;
-    padding: 0 0 0 0.75em;
-    background: transparent;
-    border-left: 1px solid var(--border);
-    border-radius: 0;
-    font-size: 0.85em;
+    margin-top: 0; margin-bottom: 0.75em; margin-left: 0;
+    padding: 0 0 0 0.75em; background: transparent;
+    border-left: 1px solid var(--border); border-radius: 0; font-size: 0.85em;
   }
 }
 
 /* ============================================================
-   Chapter Header — decorative title for chapter-level pages
-   Centered within article-layout (respects sidenote padding)
+   Chapter Header — serif with weight/size hierarchy
    ============================================================ */
 
-.chapter-header {
-  text-align: center;
-  padding: 2rem 0 0;
-  max-width: var(--content-max-width);
-}
-
+.chapter-header { text-align: center; padding: 2rem 0 0; max-width: var(--content-max-width); }
 .chapter-label {
-  font-size: 0.8rem;
-  letter-spacing: 0.3em;
-  color: var(--text-muted);
-  margin-bottom: 0.75rem;
+  font-size: 0.8rem; font-weight: 400; letter-spacing: 0.3em;
+  color: var(--text-muted); margin-bottom: 0.75rem;
 }
-
 .chapter-title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  color: var(--text);
-  margin-bottom: 0.25rem;
+  font-size: 1.8rem; font-weight: 600; letter-spacing: 0.15em;
+  color: var(--text); margin-bottom: 0.25rem;
 }
-
 .chapter-subtitle {
-  font-size: 0.85rem;
-  letter-spacing: 0.2em;
-  color: var(--text-muted);
-  font-style: italic;
-  margin-top: 0.75rem;
-  padding-bottom: 0.5rem;
+  font-size: 0.85rem; letter-spacing: 0.2em; color: var(--text-muted);
+  font-style: italic; margin-top: 0.75rem; padding-bottom: 0.5rem;
 }
-
 .chapter-divider {
-  width: 8rem;
-  margin: 2rem auto 2.5rem;
-  border: none;
-  border-top: 1px solid var(--border);
-  position: relative;
+  width: 8rem; margin: 2rem auto 2.5rem;
+  border: none; border-top: 1px solid var(--border); position: relative;
 }
-
 .chapter-divider::after {
-  content: '·';
-  position: absolute;
-  top: -0.6em;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg);
-  padding: 0 0.75em;
-  color: var(--text-muted);
-  font-size: 1rem;
+  content: '·'; position: absolute; top: -0.6em; left: 50%;
+  transform: translateX(-50%); background: var(--bg);
+  padding: 0 0.75em; color: var(--text-muted); font-size: 1rem;
 }
-
-.chapter-cover {
-  max-width: 80%;
-  margin: 2rem auto;
-  border-radius: 4px;
-  display: block;
-}
+.chapter-cover { max-width: 80%; margin: 2rem auto; border-radius: 4px; display: block; }
 
 /* ============================================================
-   Subtitle Hover Segments
+   Subtitle Segments
    ============================================================ */
 
-.subtitle-segments {
-  display: inline-flex;
-  gap: 0;
-  justify-content: center;
-}
-
-.subtitle-segment-spacer {
-  display: inline-block;
-  width: 0.1em;
-}
-
+.subtitle-segments { display: inline-flex; gap: 0; justify-content: center; }
+.subtitle-segment-spacer { display: inline-block; width: 0.1em; }
 .subtitle-segment {
-  position: relative;
-  cursor: default;
-  border-bottom: 1px dashed var(--text-muted);
-  padding-bottom: 2px;
+  position: relative; cursor: default;
+  border-bottom: 1px dashed var(--text-muted); padding-bottom: 2px;
   transition: border-color 0.2s ease, color 0.2s ease;
 }
-
 .subtitle-segment:hover {
-  border-bottom-style: solid;
-  border-color: var(--accent);
-  color: var(--accent);
+  border-bottom-style: solid; border-color: var(--accent); color: var(--accent);
 }
-
 .subtitle-segment-tooltip {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 0.7rem;
-  color: var(--accent);
-  letter-spacing: 0.05em;
-  font-style: normal;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-size: 0.7rem; color: var(--accent);
+  letter-spacing: 0.05em; font-style: normal; opacity: 0;
+  pointer-events: none; transition: opacity 0.2s ease;
 }
-
-.subtitle-segment:hover .subtitle-segment-tooltip {
-  opacity: 1;
-}
+.subtitle-segment:hover .subtitle-segment-tooltip { opacity: 1; }
 
 /* ============================================================
-   Chapter TOC (on chapter pages)
+   Chapter TOC — serif, lighter weight for hierarchy
    ============================================================ */
 
-.chapter-toc-wrapper {
-  border-top: 1px solid var(--border);
-  padding-top: 1.5rem;
-  margin-top: 2rem;
-}
-
-.chapter-toc {
-  display: flex;
-  flex-direction: column;
-}
-
+.chapter-toc-wrapper { border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 2rem; }
+.chapter-toc { display: flex; flex-direction: column; }
 .chapter-toc-item {
-  display: flex;
-  align-items: center;
-  padding: 0.4rem 0;
-  color: var(--text);
-  font-size: 0.95rem;
-  transition: opacity 0.15s;
-  text-decoration: none;
+  display: flex; align-items: center; padding: 0.4rem 0;
+  color: var(--text); font-size: 0.95rem;
+  transition: opacity 0.15s; text-decoration: none;
 }
-
-.chapter-toc-item:hover {
-  opacity: 0.6;
-}
-
-.chapter-toc-item[data-depth="2"],
-.chapter-toc-item[data-depth="3"] {
-  font-size: 0.875rem;
-}
-
+.chapter-toc-item:hover { opacity: 0.6; }
+.chapter-toc-item[data-depth='2'],
+.chapter-toc-item[data-depth='3'] { font-size: 0.875rem; }
 .chapter-toc-dot {
-  width: 1rem;
-  flex-shrink: 0;
-  text-align: center;
-  opacity: 0.3;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  margin-right: 0.25rem;
+  width: 1rem; flex-shrink: 0; text-align: center;
+  opacity: 0.3; color: var(--text-muted); font-size: 0.8rem; margin-right: 0.25rem;
 }
 
 /* ============================================================
-   Drawer
+   Drawer Overlay
    ============================================================ */
 
 #drawer-overlay {
@@ -358,28 +252,36 @@ body {
 #drawer-overlay.active { opacity: 1; pointer-events: auto; }
 
 /* ============================================================
-   Reader Letter
+   Reader Letter — serif
    ============================================================ */
 
 .reader-letter {
-  margin: 2em 0; padding: 1.5em 2em; background: var(--bg-surface);
-  border-radius: 4px; font-family: var(--font-family-kai);
-  font-size: 0.95em; line-height: 1.8; position: relative;
-  transition: var(--transition-color);
+  margin: 2em 0; padding: 1.5em 2em;
+  background: var(--bg-surface); border-radius: 4px;
+  font-family: var(--font-serif);
+  font-size: 0.95em; line-height: 1.8;
+  position: relative; transition: var(--transition-color);
 }
 .reader-letter::before {
   content: '✉'; position: absolute; top: 0.75em; right: 1em;
   font-size: 1.2em; opacity: 0.3;
 }
 .reader-letter-meta {
-  margin-top: 1em; text-align: right; color: var(--text-muted); font-size: 0.85em;
+  margin-top: 1em; text-align: right;
+  color: var(--text-muted); font-size: 0.85em;
 }
 
 /* ============================================================
-   View Transitions
+   Transitions
    ============================================================ */
 
-@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fade-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-4px); } }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
 ::view-transition-old(main-content) { animation: fade-out 0.15s ease-out forwards; }
 ::view-transition-new(main-content) { animation: fade-in 0.15s ease-in forwards; }

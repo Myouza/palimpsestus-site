@@ -1,7 +1,7 @@
 ---
 import { ui } from '@/config/site';
 
-const { themes, fontSizes, fontFamilies, sidenotes } = ui.settings;
+const { themes, fontSizes, sidenotes } = ui.settings;
 ---
 
 <button id="settings-toggle"
@@ -43,22 +43,6 @@ const { themes, fontSizes, fontFamilies, sidenotes } = ui.settings;
           <button data-set-fontsize={key}
             class="fontsize-btn flex-1 py-1.5 rounded text-xs transition-all"
             style="border: 1px solid var(--border);">
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-
-    {/* ── Font family ── */}
-    <div>
-      <label class="block text-xs mb-2 tracking-wider" style="color: var(--text-muted);">{ui.settings.fontFamilyLabel}</label>
-      <div class="flex gap-2">
-        {Object.entries(fontFamilies).map(([key, label]) => (
-          <button data-set-fontfamily={key}
-            class="fontfamily-btn flex-1 py-1.5 rounded text-xs transition-all"
-            style={`border: 1px solid var(--border); font-family: ${
-              key === 'kai' ? "'LXGW WenKai', serif" : "'Noto Serif SC', serif"
-            };`}>
             {label}
           </button>
         ))}
@@ -119,12 +103,7 @@ const { themes, fontSizes, fontFamilies, sidenotes } = ui.settings;
         (btn as HTMLElement).style.borderColor =
           (btn as HTMLElement).dataset.setFontsize === state.fontSize ? 'var(--accent)' : 'var(--border)';
       });
-      panel.querySelectorAll('.fontfamily-btn').forEach((btn) => {
-        (btn as HTMLElement).style.borderColor =
-          (btn as HTMLElement).dataset.setFontfamily === state.fontFamily ? 'var(--accent)' : 'var(--border)';
-      });
 
-      // Sidenote toggle highlights
       const showBtn = document.getElementById('sidenotes-show-all') as HTMLElement;
       const hideBtn = document.getElementById('sidenotes-hide-all') as HTMLElement;
       if (showBtn && hideBtn) {
@@ -133,18 +112,13 @@ const { themes, fontSizes, fontFamilies, sidenotes } = ui.settings;
       }
     }
 
-    // Theme / font buttons
     panel.querySelectorAll('[data-set-theme]').forEach((btn) => {
       btn.addEventListener('click', () => apply('theme', (btn as HTMLElement).dataset.setTheme!));
     });
     panel.querySelectorAll('[data-set-fontsize]').forEach((btn) => {
       btn.addEventListener('click', () => apply('fontSize', (btn as HTMLElement).dataset.setFontsize!));
     });
-    panel.querySelectorAll('[data-set-fontfamily]').forEach((btn) => {
-      btn.addEventListener('click', () => apply('fontFamily', (btn as HTMLElement).dataset.setFontfamily!));
-    });
 
-    // Sidenote global toggle
     document.getElementById('sidenotes-show-all')?.addEventListener('click', () => {
       state.sidenotesAutoOpen = true;
       document.querySelectorAll('.sidenote-content').forEach(el => el.classList.add('open'));

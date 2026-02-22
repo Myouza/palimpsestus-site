@@ -40,7 +40,6 @@ export const ui = {
     label: '阅读设置',
     bgLabel: '背景',
     fontSizeLabel: '字号',
-    fontFamilyLabel: '字体',
     sidenotesLabel: '边注',
     themes: {
       paper: '米色',
@@ -51,10 +50,6 @@ export const ui = {
       small: '小',
       medium: '中',
       large: '大',
-    } as Record<string, string>,
-    fontFamilies: {
-      serif: '宋体',
-      kai: '楷体',
     } as Record<string, string>,
     sidenotes: {
       showAll: '展开全部',
