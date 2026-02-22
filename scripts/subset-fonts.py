@@ -33,12 +33,9 @@ RANGES = {
         "end": 0x2A6DF,
         "label": "CJK Extension B",
     },
-    "NushuSerif": {
-        "source": os.path.join(FONT_DIR, "NyushuFengQi.ttf"),
-        "start": 0x1B170,
-        "end": 0x1B2FF,
-        "label": "Nushu",
-    },
+    # NushuSerif: no longer subsetted here.
+    # Using official NyushuSerif-1.0022.woff2 (55KB) directly in public/fonts/.
+    # It includes 396 nüshu chars + 1765 hanzi double-encoded glyphs + full GSUB.
 }
 
 
@@ -99,9 +96,19 @@ def generate_subset(name: str, chars: set[str], output_dir: str) -> None:
     options = Options()
     options.flavor = "woff2"
     options.desubroutinize = True
-    options.drop_tables += ["meta"]
+    options.layout_features = []  # We only need glyph outlines, not shaping rules
+    options.layout_closure = False  # Don't compute layout closure
+    options.drop_tables += ["meta", "GSUB", "GPOS", "GDEF", "MATH"]
 
     font = TTFont(source)
+
+    # Physically remove potentially corrupted OT layout tables BEFORE subsetting.
+    # Some community fonts (e.g. NyushuFengQi) have malformed GSUB/GPOS that crash
+    # fonttools during the pre-subset pruning phase, before drop_tables takes effect.
+    for bad_table in ["GSUB", "GPOS", "GDEF", "MATH"]:
+        if bad_table in font:
+            del font[bad_table]
+
     subsetter = Subsetter(options=options)
     subsetter.populate(unicodes=[ord(c) for c in chars])
     subsetter.subset(font)

@@ -8,15 +8,19 @@
    Fonts — build-time generated subsets for rare characters
    ============================================================ */
 
+/* Nüshu serif — official woff2 from nushu-script/Nyushu v1.0022
+   55KB, includes 396 nüshu + 1765 hanzi double-encoded glyphs.
+   Applied only via <Nushu> component, NOT in body font chain.
+   Supports OpenType features: calt, salt, ss01-ss10 */
 @font-face {
   font-family: 'NushuSerif';
   src: url('/fonts/NushuSerif.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+1B170-1B2FF;
 }
 
+/* CJK Extension B — build-time subset from NotoSerifCJKsc */
 @font-face {
   font-family: 'CJKExtB-Serif';
   src: url('/fonts/CJKExtB-Serif.woff2') format('woff2');
@@ -44,7 +48,7 @@
   --sidenote-border: #8B4513;
   --selection: rgba(139, 69, 19, 0.15);
   --font-size: 1.125rem;
-  --font-serif: 'Noto Serif SC', 'CJKExtB-Serif', 'NushuSerif', serif;
+  --font-serif: 'Noto Serif SC', 'CJKExtB-Serif', serif;
   --font-sans: 'Noto Sans SC', sans-serif;
   --line-height: 1.9;
   --content-max-width: 42rem;
@@ -270,6 +274,27 @@ body {
   margin-top: 1em; text-align: right;
   color: var(--text-muted); font-size: 0.85em;
 }
+
+/* ============================================================
+   Nüshu — renders hanzi as nüshu glyphs via double-encoding
+   Usage in MDX: <Nushu>女人水火</Nushu>
+   Copy-paste gives back hanzi. Pure CSS magic.
+   ============================================================ */
+
+.nushu {
+  font-family: 'NushuSerif', serif;
+  /* Nüshu is traditionally written top-to-bottom, but in inline
+     horizontal context we just apply the font. The 1.0022 version
+     is pre-scaled 1.333x for hanzi mixed typesetting. */
+}
+
+/* Enable OpenType contextual alternates by default */
+.nushu { font-feature-settings: 'calt' 1; }
+
+/* Optional: expose stylistic sets via utility classes
+   Usage: <Nushu class="nushu-original">text</Nushu> */
+.nushu-original { font-feature-settings: 'calt' 1, 'ss01' 1; }
+.nushu-alt      { font-feature-settings: 'calt' 1, 'ss03' 1; }
 
 /* ============================================================
    Transitions

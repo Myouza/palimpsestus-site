@@ -1,0 +1,35 @@
+---
+/**
+ * <Nushu> — Renders enclosed hanzi text as Nüshu glyphs.
+ *
+ * The NyushuSerif font double-encodes 1765 hanzi codepoints to nüshu glyphs.
+ * Readers see nüshu, but copy-paste produces the original hanzi.
+ *
+ * Usage in MDX:
+ *   <Nushu>女人水火</Nushu>
+ *   <Nushu original>女人水火</Nushu>   ← uses ss01 (original calligraphy)
+ *   <Nushu alt>女人水火</Nushu>        ← uses ss03 (variant strokes)
+ *
+ * Note: Not all hanzi have nüshu equivalents. The font covers ~1765 common
+ * characters. Unmapped hanzi will fall through to the next font in the chain.
+ */
+
+interface Props {
+  /** Use ss01: original calligraphy variants (胡欣 style) */
+  original?: boolean;
+  /** Use ss03: alternative stroke variants */
+  alt?: boolean;
+  class?: string;
+}
+
+const { original, alt, class: className } = Astro.props;
+
+const cssClass = [
+  'nushu',
+  original && 'nushu-original',
+  alt && 'nushu-alt',
+  className,
+].filter(Boolean).join(' ');
+---
+
+<span class={cssClass}><slot /></span>
