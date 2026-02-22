@@ -10,8 +10,21 @@
 
 /* Nüshu serif — official woff2 from nushu-script/Nyushu v1.0022
    55KB, includes 396 nüshu + 1765 hanzi double-encoded glyphs.
-   Applied only via <Nushu> component, NOT in body font chain.
-   Supports OpenType features: calt, salt, ss01-ss10 */
+   Two declarations:
+   1. unicode-range scoped: catches direct nüshu chars (U+1B170-1B2FF) in body text
+   2. Unscoped: used by .nushu class for hanzi→nüshu rendering */
+
+/* Declaration 1: fallback for direct nüshu Unicode characters in body text */
+@font-face {
+  font-family: 'NushuSerif-Fallback';
+  src: url('/fonts/NushuSerif.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+1B170-1B2FF, U+16FE1;
+}
+
+/* Declaration 2: full font for .nushu component (renders hanzi as nüshu) */
 @font-face {
   font-family: 'NushuSerif';
   src: url('/fonts/NushuSerif.woff2') format('woff2');
@@ -48,7 +61,7 @@
   --sidenote-border: #8B4513;
   --selection: rgba(139, 69, 19, 0.15);
   --font-size: 1.125rem;
-  --font-serif: 'Noto Serif SC', 'CJKExtB-Serif', serif;
+  --font-serif: 'Noto Serif SC', 'CJKExtB-Serif', 'NushuSerif-Fallback', serif;
   --font-sans: 'Noto Sans SC', sans-serif;
   --line-height: 1.9;
   --content-max-width: 42rem;
