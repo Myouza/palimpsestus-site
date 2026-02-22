@@ -90,7 +90,7 @@ export const themeButtonStyles: Record<string, { bg: string; text: string }> = {
 
 export const typography = {
   fontFamilies: {
-    serif: "'Noto Serif SC', 'CJKExtB-Serif', 'NushuSerif-Fallback', serif",
+    serif: "'CJKExtB-Serif', 'CJKRare-Serif', 'Noto Serif SC', 'NushuSerif-Fallback', serif",
     sans: "'Noto Sans SC', sans-serif",
   },
   fontSizes: {
