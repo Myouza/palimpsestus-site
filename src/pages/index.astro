@@ -97,7 +97,7 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
           const link = document.createElement('a');
           link.href = ch.url;
           link.textContent = ch.title;
-          link.style.cssText = 'font-size:1.05rem; font-weight:500; color:var(--text); transition:opacity 0.15s; flex:1;';
+          link.style.cssText = 'font-size:1.05rem; font-weight:400; color:var(--text); transition:opacity 0.15s; flex:1;';
           link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
           link.addEventListener('mouseleave', () => link.style.opacity = '1');
           row.appendChild(link);
@@ -127,7 +127,7 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
           const link = document.createElement('a');
           link.href = ch.url;
           link.textContent = ch.title;
-          link.style.cssText = 'font-size:1.05rem; font-weight:500; color:var(--text); transition:opacity 0.15s; flex:1;';
+          link.style.cssText = 'font-size:1.05rem; font-weight:400; color:var(--text); transition:opacity 0.15s; flex:1;';
           link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
           link.addEventListener('mouseleave', () => link.style.opacity = '1');
           row.appendChild(link);

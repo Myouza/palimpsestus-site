@@ -1,114 +1,58 @@
 #!/usr/bin/env python3
 """
-subset-fonts.py — Build-time font subsetting for Palimpsestus
+subset-fonts.py — Full-site font subsetting for Palimpsestus
 
-Scans all MDX content files, identifies characters outside the coverage
-of Google Fonts CDN, and generates minimal woff2 subsets from full source
-fonts stored on the server.
+Scans all content files, extracts every unique character, and generates
+woff2 subsets from the full Noto Serif CJK SC source fonts on the server.
 
-Key behavior:
-- Generates one woff2 per (range, weight) combination
-- Verifies actual glyph coverage before subsetting — chars without real
-  glyphs are excluded so browsers can fall through to system fonts
-- Reports coverage gaps for debugging
+This replaces Google Fonts CDN entirely. All characters — common and rare,
+basic CJK and extension blocks — come from the same source fonts, ensuring
+pixel-perfect visual consistency across all platforms.
+
+Only the three weights actually used by CSS are generated:
+  400 (body text), 600 (headings), 700 (bold/strong)
 
 Usage:
     python3 subset-fonts.py <content_dir> <output_dir>
 
 Requires: fonttools, brotli (pip install fonttools brotli)
-Source fonts expected at: /opt/palimpsestus/fonts/
+Source fonts: /opt/palimpsestus/fonts/NotoSerifCJKsc-*.otf
 """
 
 import sys
 import os
 import glob
-from pathlib import Path
 
 FONT_DIR = "/opt/palimpsestus/fonts"
 
-RANGES = {
-    "CJKExtB-Serif": {
-        "start": 0x20000,
-        "end": 0x2A6DF,
-        "label": "CJK Extension B",
-        "weights": {
-            200: "NotoSerifCJKsc-ExtraLight.otf",
-            300: "NotoSerifCJKsc-Light.otf",
-            400: "NotoSerifCJKsc-Regular.otf",
-            500: "NotoSerifCJKsc-Medium.otf",
-            600: "NotoSerifCJKsc-SemiBold.otf",
-            700: "NotoSerifCJKsc-Bold.otf",
-            900: "NotoSerifCJKsc-Black.otf",
-        },
-    },
-    # Also cover rare Basic CJK chars that Google Fonts CDN might not
-    # serve with all weights. Any char in 4E00-9FFF that appears in
-    # content AND exists in our local font will get a local subset.
-    # Google Fonts still loads first (it's in the font-family chain),
-    # but our local subset acts as a weight-complete fallback.
-    "CJKRare-Serif": {
-        "start": 0x4E00,
-        "end": 0x9FFF,
-        "label": "CJK Basic (rare chars)",
-        "weights": {
-            200: "NotoSerifCJKsc-ExtraLight.otf",
-            300: "NotoSerifCJKsc-Light.otf",
-            400: "NotoSerifCJKsc-Regular.otf",
-            500: "NotoSerifCJKsc-Medium.otf",
-            600: "NotoSerifCJKsc-SemiBold.otf",
-            700: "NotoSerifCJKsc-Bold.otf",
-            900: "NotoSerifCJKsc-Black.otf",
-        },
-        # Only subset chars that appear in content AND are in a known
-        # "rare" list. We don't want to subset all 20,000+ basic CJK.
-        "rare_only": True,
-    },
-    # NushuSerif: not subsetted here.
-    # Using official NyushuSerif-1.0022.woff2 (55KB) directly in public/fonts/.
+# Only the weights our CSS actually uses.
+# Maps CSS font-weight → source OTF filename.
+WEIGHTS = {
+    400: "NotoSerifCJKsc-Regular.otf",
+    600: "NotoSerifCJKsc-SemiBold.otf",
+    700: "NotoSerifCJKsc-Bold.otf",
 }
 
-# Basic CJK characters known to be rare enough that Google Fonts CDN
-# might not serve them with full weight coverage. Add chars here as
-# encountered. This is a whitelist — only these chars get local subsets.
-RARE_BASIC_CJK = set(
-    "迌"  # U+8FCC thô (闽南语)
-    "圊"  # U+570A (溷圊)
-    "溷"  # U+6E37
+# Characters to always include even if not in content files.
+# Covers common punctuation and symbols that might appear dynamically
+# (e.g. via JavaScript, page navigation, etc.)
+ALWAYS_INCLUDE = set(
+    "…—–·「」『』（）《》〈〉【】""''！？。，、；：" 
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789"
+    " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+    "←→↑↓"
+    "✉·›"
 )
 
-
-def check_glyph_coverage(font_path: str, chars: set[str]) -> tuple[set[str], set[str]]:
-    """Check which chars have real glyphs (not .notdef) in the font.
-    Returns (covered, missing) sets."""
-    from fontTools.ttLib import TTFont
-
-    font = TTFont(font_path)
-    cmap = font.getBestCmap()
-    glyph_set = font.getGlyphOrder()
-    notdef = glyph_set[0] if glyph_set else '.notdef'
-
-    covered = set()
-    missing = set()
-
-    for char in chars:
-        cp = ord(char)
-        if cp in cmap:
-            glyph_name = cmap[cp]
-            # Check it's not mapping to .notdef or an empty glyph
-            if glyph_name != notdef and glyph_name != '.notdef':
-                covered.add(char)
-            else:
-                missing.add(char)
-        else:
-            missing.add(char)
-
-    font.close()
-    return covered, missing
+# Output font-family name used in CSS
+FAMILY = "SiteSerif"
 
 
-def scan_content(content_dir: str) -> dict[str, set[str]]:
-    """Scan all MDX/MD files and collect characters per range."""
-    found: dict[str, set[str]] = {name: set() for name in RANGES}
+def scan_content(content_dir: str) -> set[str]:
+    """Scan all MDX/MD files and collect every unique character."""
+    chars = set()
 
     patterns = ["**/*.mdx", "**/*.md"]
     files = []
@@ -117,40 +61,56 @@ def scan_content(content_dir: str) -> dict[str, set[str]]:
 
     if not files:
         print(f"  Warning: no content files found in {content_dir}")
-        return found
+        return chars
 
     print(f"  Scanning {len(files)} content files...")
 
     for filepath in files:
         with open(filepath, "r", encoding="utf-8") as f:
             text = f.read()
-        for char in text:
-            cp = ord(char)
-            for name, cfg in RANGES.items():
-                if cfg["start"] <= cp <= cfg["end"]:
-                    # For rare_only ranges, check whitelist
-                    if cfg.get("rare_only") and char not in RARE_BASIC_CJK:
-                        continue
-                    found[name].add(char)
+        chars.update(text)
 
-    return found
+    # Add guaranteed characters
+    chars.update(ALWAYS_INCLUDE)
+
+    # Remove control characters (keep only printable)
+    chars = {c for c in chars if ord(c) >= 0x20}
+
+    return chars
 
 
-def generate_subset(name: str, weight: int, font_file: str,
-                    chars: set[str], output_dir: str) -> None:
-    """Generate a woff2 subset for a specific range + weight."""
+def check_coverage(font_path: str, chars: set[str]) -> tuple[set[str], set[str]]:
+    """Check which chars have real glyphs in the font."""
+    from fontTools.ttLib import TTFont
+
+    font = TTFont(font_path)
+    cmap = font.getBestCmap()
+    glyph_order = font.getGlyphOrder()
+    notdef = glyph_order[0] if glyph_order else '.notdef'
+
+    covered = set()
+    missing = set()
+
+    for char in chars:
+        cp = ord(char)
+        if cp in cmap and cmap[cp] != notdef and cmap[cp] != '.notdef':
+            covered.add(char)
+        else:
+            missing.add(char)
+
+    font.close()
+    return covered, missing
+
+
+def generate_subset(weight: int, font_file: str, chars: set[str],
+                    output_dir: str) -> int:
+    """Generate a woff2 subset. Returns file size or 0 on failure."""
     source = os.path.join(FONT_DIR, font_file)
-    output = os.path.join(output_dir, f"{name}-{weight}.woff2")
+    output = os.path.join(output_dir, f"{FAMILY}-{weight}.woff2")
 
     if not os.path.exists(source):
-        if weight == 400:
-            print(f"  Warning: Source font not found: {source}")
-        return
-
-    if not chars:
-        if os.path.exists(output):
-            os.remove(output)
-        return
+        print(f"    Warning: {source} not found, skipping weight {weight}")
+        return 0
 
     from fontTools.subset import Subsetter, Options
     from fontTools.ttLib import TTFont
@@ -158,14 +118,11 @@ def generate_subset(name: str, weight: int, font_file: str,
     options = Options()
     options.flavor = "woff2"
     options.desubroutinize = True
-    options.layout_features = []
-    options.layout_closure = False
-    options.drop_tables += ["meta", "GSUB", "GPOS", "GDEF", "MATH"]
+    # Keep basic layout features for proper rendering
+    options.layout_features = ['kern', 'liga', 'calt', 'ccmp', 'locl']
+    options.drop_tables += ["meta", "MATH"]
 
     font = TTFont(source)
-    for table in ["GSUB", "GPOS", "GDEF", "MATH"]:
-        if table in font:
-            del font[table]
 
     subsetter = Subsetter(options=options)
     subsetter.populate(unicodes=[ord(c) for c in chars])
@@ -174,7 +131,7 @@ def generate_subset(name: str, weight: int, font_file: str,
     font.close()
 
     size = os.path.getsize(output)
-    print(f"    {name}-{weight}.woff2 ({size:,} bytes)")
+    return size
 
 
 def main():
@@ -194,60 +151,48 @@ def main():
     print("Font subsetting for Palimpsestus")
     print("=" * 40)
 
-    found = scan_content(content_dir)
+    # Step 1: Scan content
+    all_chars = scan_content(content_dir)
+    print(f"  Total unique characters: {len(all_chars)}")
 
-    total = sum(len(v) for v in found.values())
-    print(f"  Total rare characters found: {total}")
+    # Step 2: Check coverage against Regular weight
+    regular_path = os.path.join(FONT_DIR, WEIGHTS[400])
+    if not os.path.exists(regular_path):
+        print(f"  Error: {regular_path} not found!")
+        sys.exit(1)
+
+    covered, missing = check_coverage(regular_path, all_chars)
+
+    # Categorize for reporting
+    cjk_covered = {c for c in covered if ord(c) >= 0x4E00}
+    latin_covered = {c for c in covered if ord(c) < 0x4E00}
+    cjk_missing = {c for c in missing if ord(c) >= 0x2000}  # non-trivial missing
+
+    print(f"  Covered by font: {len(covered)} ({len(cjk_covered)} CJK + {len(latin_covered)} Latin/symbols)")
+    if cjk_missing:
+        miss_display = "".join(sorted(cjk_missing)[:20])
+        extra = f" (+{len(cjk_missing)-20} more)" if len(cjk_missing) > 20 else ""
+        print(f"  CJK chars without glyphs: {len(cjk_missing)} [{miss_display}]{extra}")
+        print(f"    (these will fall back to system fonts)")
     print()
 
-    for name, cfg in RANGES.items():
-        chars = found[name]
-        if not chars:
-            print(f"  . {name}: no characters found, skipping")
-            continue
+    # Step 3: Generate subsets for each weight
+    print(f"  Generating {len(WEIGHTS)} weight variants...")
+    total_size = 0
+    for weight, font_file in sorted(WEIGHTS.items()):
+        size = generate_subset(weight, font_file, covered, output_dir)
+        if size > 0:
+            total_size += size
+            print(f"    {FAMILY}-{weight}.woff2  ({size:,} bytes)")
 
-        # Use the Regular (400) font to check glyph coverage
-        regular_file = cfg["weights"].get(400)
-        if regular_file:
-            regular_path = os.path.join(FONT_DIR, regular_file)
-            if os.path.exists(regular_path):
-                covered, missing = check_glyph_coverage(regular_path, chars)
-
-                char_display = "".join(sorted(covered))
-                print(f"  -> {name}: {len(covered)} chars with glyphs [{char_display}]")
-
-                if missing:
-                    miss_display = "".join(sorted(missing))
-                    print(f"     {len(missing)} chars WITHOUT glyphs [{miss_display}] (excluded, browser will use system font)")
-
-                # Only subset chars that actually have glyphs
-                chars = covered
-            else:
-                char_display = "".join(sorted(chars))
-                print(f"  -> {name}: {len(chars)} chars [{char_display}] (coverage not verified)")
-
-        if not chars:
-            print(f"     No chars to subset after coverage check")
-            # Clean up any stale files
-            for weight in cfg["weights"]:
-                stale = os.path.join(output_dir, f"{name}-{weight}.woff2")
-                if os.path.exists(stale):
-                    os.remove(stale)
-            continue
-
-        generated = 0
-        for weight, font_file in sorted(cfg["weights"].items()):
-            source = os.path.join(FONT_DIR, font_file)
-            if os.path.exists(source):
-                generate_subset(name, weight, font_file, chars, output_dir)
-                generated += 1
-
-        if generated == 0:
-            print(f"    Warning: No source fonts found in {FONT_DIR}")
-        else:
-            print(f"    Generated {generated} weight variants")
+    # Clean up old files from previous architecture
+    for old_pattern in ["CJKExtB-Serif-*.woff2", "CJKRare-Serif-*.woff2"]:
+        for old_file in glob.glob(os.path.join(output_dir, old_pattern)):
+            os.remove(old_file)
+            print(f"    Cleaned up old file: {os.path.basename(old_file)}")
 
     print()
+    print(f"  Total font size: {total_size:,} bytes ({total_size/1024:.0f} KB)")
     print("Done.")
 
 

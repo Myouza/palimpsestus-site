@@ -90,8 +90,8 @@ export const themeButtonStyles: Record<string, { bg: string; text: string }> = {
 
 export const typography = {
   fontFamilies: {
-    serif: "'CJKExtB-Serif', 'CJKRare-Serif', 'Noto Serif SC', 'NushuSerif-Fallback', serif",
-    sans: "'Noto Sans SC', sans-serif",
+    serif: "'SiteSerif', 'NushuSerif-Fallback', serif",
+    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif",
   },
   fontSizes: {
     small: '1rem',

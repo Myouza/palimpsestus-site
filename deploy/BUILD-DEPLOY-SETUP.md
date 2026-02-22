@@ -8,13 +8,10 @@ GitHub push → Actions SSH 到服务器（deploy 用户）→ 服务器本地�
 服务器目录结构：
 /opt/palimpsestus/
 ├── fonts/                               ← 完整字体源文件（ubuntu 所有）
-│   ├── NotoSerifCJKsc-ExtraLight.otf    ← 200
-│   ├── NotoSerifCJKsc-Light.otf         ← 300
-│   ├── NotoSerifCJKsc-Regular.otf       ← 400（正文）
-│   ├── NotoSerifCJKsc-Medium.otf        ← 500
-│   ├── NotoSerifCJKsc-SemiBold.otf      ← 600（标题）
-│   ├── NotoSerifCJKsc-Bold.otf          ← 700（加粗）
-│   └── NotoSerifCJKsc-Black.otf         ← 900
+│   ├── NotoSerifCJKsc-Regular.otf       ← 400（正文）  ← 实际使用
+│   ├── NotoSerifCJKsc-SemiBold.otf      ← 600（标题）  ← 实际使用
+│   ├── NotoSerifCJKsc-Bold.otf          ← 700（加粗）  ← 实际使用
+│   └── (其余字重可保留备用，但脚本不会使用)
 ├── venv/                                ← Python 虚拟环境（deploy 所有）
 ├── repos/                               ← deploy 所有
 │   ├── framework/                       ← palimpsestus-site 仓库
@@ -225,15 +222,16 @@ bash scripts/server-deploy.sh main main
 ── Subsetting fonts ──
 Font subsetting for Palimpsestus
 ========================================
-  Scanning 20 content files...
-  Total rare characters found: 7
+  Scanning N content files...
+  Total unique characters: ~2000
+  Covered by font: ~1800 (CJK + Latin/symbols)
 
-  -> CJKExtB-Serif: 7 chars [𠊎𢬦𣍐𤆬𤼵𨑨𨒪]
-    CJKExtB-Serif-400.woff2 (x,xxx bytes)
-    CJKExtB-Serif-600.woff2 (x,xxx bytes)
-    CJKExtB-Serif-700.woff2 (x,xxx bytes)
-    Generated 3 weight variants
-    (更多字重有对应 .otf 的话会一并生成)
+  Generating 3 weight variants...
+    SiteSerif-400.woff2  (~150 KB)
+    SiteSerif-600.woff2  (~160 KB)
+    SiteSerif-700.woff2  (~170 KB)
+
+  Total font size: ~480 KB
 
 ── Building site ──
 ── Deploying to /var/www/production ──
@@ -288,7 +286,7 @@ sudo nginx -t && sudo systemctl reload nginx
 把交付的 tar.gz 解压到本地框架仓库，用 GitHub Desktop 推送。
 
 注意推送前确认：
-- `.gitignore` 里有 `public/fonts/*.woff2`
+- `.gitignore` 里有 `public/fonts/SiteSerif-*.woff2`
 - `public/fonts/` 里只有 `.gitkeep`，没有旧的 woff2 文件
 
 推送后 GitHub Actions 会 SSH 到你的服务器，以 deploy 身份执行 `server-deploy.sh`，全自动完成构建部署。

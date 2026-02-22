@@ -7,7 +7,7 @@ dist/
 .env.*
 
 # Build-time generated font subsets (created by subset-fonts.py on server)
-public/fonts/*.woff2
+public/fonts/SiteSerif-*.woff2
 !public/fonts/NushuSerif.woff2
 
 # Uncomment the next line after setting up the private content repo,

@@ -1,20 +1,43 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================================
-   Fonts — build-time generated subsets for rare characters
+   Fonts — fully self-hosted, no external CDN
+   ============================================================
+   SiteSerif: build-time subsets from NotoSerifCJKsc OTF source files.
+   Python scans all content, extracts unique chars, generates woff2.
+   All characters (common + rare, CJK + Latin) from the same source,
+   ensuring pixel-perfect visual consistency across all platforms.
    ============================================================ */
+
+@font-face {
+  font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* Nüshu serif — official woff2 from nushu-script/Nyushu v1.0022
    55KB, includes 396 nüshu + 1765 hanzi double-encoded glyphs.
    Two declarations:
-   1. unicode-range scoped: catches direct nüshu chars (U+1B170-1B2FF) in body text
+   1. unicode-range scoped: catches direct nüshu chars in body text
    2. Unscoped: used by .nushu class for hanzi→nüshu rendering */
-
-/* Declaration 1: fallback for direct nüshu Unicode characters in body text */
 @font-face {
   font-family: 'NushuSerif-Fallback';
   src: url('/fonts/NushuSerif.woff2') format('woff2');
@@ -23,96 +46,12 @@
   font-display: swap;
   unicode-range: U+1B170-1B2FF, U+16FE1;
 }
-
-/* Declaration 2: full font for .nushu component (renders hanzi as nüshu) */
 @font-face {
   font-family: 'NushuSerif';
   src: url('/fonts/NushuSerif.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-}
-
-/* CJK Extension B — build-time subsets from NotoSerifCJKsc per weight.
-   Each weight file is ~2KB, generated only for chars actually used.
-   Missing weight files silently fall back to browser synthesis. */
-@font-face {
-  font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif-200.woff2') format('woff2');
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+20000-2A6DF;
-}
-@font-face {
-  font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif-300.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+20000-2A6DF;
-}
-@font-face {
-  font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif-400.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+20000-2A6DF;
-}
-@font-face {
-  font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif-500.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+20000-2A6DF;
-}
-@font-face {
-  font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif-600.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+20000-2A6DF;
-}
-@font-face {
-  font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif-700.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+20000-2A6DF;
-}
-@font-face {
-  font-family: 'CJKExtB-Serif';
-  src: url('/fonts/CJKExtB-Serif-900.woff2') format('woff2');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+20000-2A6DF;
-}
-
-/* CJK Rare (Basic) — local multi-weight subset for rare basic CJK chars
-   (e.g. 迌 U+8FCC) where Google Fonts CDN may not deliver all weights.
-   unicode-range must match RARE_BASIC_CJK in subset-fonts.py */
-@font-face {
-  font-family: 'CJKRare-Serif';
-  src: url('/fonts/CJKRare-Serif-400.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
-  unicode-range: U+8FCC, U+570A, U+6E37;
-}
-@font-face {
-  font-family: 'CJKRare-Serif';
-  src: url('/fonts/CJKRare-Serif-600.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
-  unicode-range: U+8FCC, U+570A, U+6E37;
-}
-@font-face {
-  font-family: 'CJKRare-Serif';
-  src: url('/fonts/CJKRare-Serif-700.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
-  unicode-range: U+8FCC, U+570A, U+6E37;
 }
 
 /* ============================================================
@@ -133,14 +72,8 @@
   --sidenote-border: #8B4513;
   --selection: rgba(139, 69, 19, 0.15);
   --font-size: 1.125rem;
-  /* Font chain order matters! Local subsets BEFORE Google CDN.
-     On mobile, CDN's Noto Serif SC claims ExtB unicode-range but
-     only covers some chars. Putting local fonts first ensures our
-     complete multi-weight subsets take priority for rare chars.
-     unicode-range on each @font-face prevents them from interfering
-     with normal CJK chars that CDN handles fine. */
-  --font-serif: 'CJKExtB-Serif', 'CJKRare-Serif', 'Noto Serif SC', 'NushuSerif-Fallback', serif;
-  --font-sans: 'Noto Sans SC', sans-serif;
+  --font-serif: 'SiteSerif', 'NushuSerif-Fallback', serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --line-height: 1.9;
   --content-max-width: 42rem;
   --sidenote-width: 14rem;
