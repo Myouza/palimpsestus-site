@@ -71,7 +71,14 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     return node.title;
   }
 
+  let _drawerAC: AbortController | null = null;
+
   function initDrawer() {
+    // Abort all previous listeners from prior calls
+    _drawerAC?.abort();
+    _drawerAC = new AbortController();
+    const { signal } = _drawerAC;
+
     const toggle = document.getElementById('drawer-toggle');
     const panel = document.getElementById('drawer-panel');
     const overlay = document.getElementById('drawer-overlay');
@@ -83,8 +90,6 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     const chapters = JSON.parse(raw);
     const currentId = urlToId(window.location.pathname);
 
-    // Use getElementById inside open/close to always get the live DOM element,
-    // avoiding stale references after cloneNode replacements.
     function openDrawer() {
       panel.classList.remove('-translate-x-full');
       document.getElementById('drawer-overlay')?.classList.add('active');
@@ -94,14 +99,17 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
       document.getElementById('drawer-overlay')?.classList.remove('active');
     }
 
-    // Clone to remove old listeners, then re-attach
-    const newToggle = toggle.cloneNode(true);
-    toggle.parentNode?.replaceChild(newToggle, toggle);
-    newToggle.addEventListener('click', () => panel.classList.contains('-translate-x-full') ? openDrawer() : closeDrawer());
+    toggle.addEventListener('click', () => {
+      panel.classList.contains('-translate-x-full') ? openDrawer() : closeDrawer();
+    }, { signal });
 
-    const newOverlay = overlay.cloneNode(true);
-    overlay.parentNode?.replaceChild(newOverlay, overlay);
-    newOverlay.addEventListener('click', closeDrawer);
+    overlay.addEventListener('click', closeDrawer, { signal });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.classList.contains('-translate-x-full')) {
+        closeDrawer();
+      }
+    }, { signal });
 
     nav.innerHTML = '';
 
@@ -169,13 +177,6 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     }
 
     chapters.forEach((ch: any) => renderNode(ch, nav));
-
-    // ESC key closes drawer
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !panel.classList.contains('-translate-x-full')) {
-        closeDrawer();
-      }
-    });
   }
 
   initDrawer();
