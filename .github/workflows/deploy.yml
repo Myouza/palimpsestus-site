@@ -1,28 +1,37 @@
 # deploy.yml — Trigger server-side build & deploy
 #
 # Triggers:
-#   1. Push to main/preview (framework changes)
+#   1. Push to main/preview on this (framework) repo
 #   2. repository_dispatch from private content repo
+#   3. Manual trigger from GitHub Actions UI (workflow_dispatch)
 #
-# Logic:
-#   - Determines content_branch and framework_branch
-#   - SSHs into the server and runs server-deploy.sh
-#   - Server handles: git pull, font subsetting, build, deploy
-#
-# Required secrets:
-#   SERVER_HOST, SERVER_SSH_PORT, SERVER_USER, SERVER_SSH_KEY
-#   CONTENT_REPO, CONTENT_DEPLOY_KEY, FRAMEWORK_DISPATCH_TOKEN (content repo)
+# Branch combinations (always symmetrical):
+#   main + main       → production (/var/www/production)
+#   preview + preview → staging    (/var/www/staging)
 
 name: Build & Deploy
 
 on:
   push:
     branches: [main, preview]
+
   repository_dispatch:
     types: [content-update]
 
+  # Manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Deploy target (main=production, preview=staging)'
+        required: true
+        default: 'main'
+        type: choice
+        options:
+          - main
+          - preview
+
 concurrency:
-  group: deploy-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || github.ref_name }}
+  group: deploy-${{ github.event.inputs.branch || (github.event_name == 'repository_dispatch' && github.event.client_payload.branch) || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -30,28 +39,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ── Determine branches ──
       - name: Set deployment target
         id: target
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            CONTENT_BRANCH="${{ github.event.client_payload.branch }}"
-            FRAMEWORK_BRANCH="main"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            BRANCH="${{ github.event.client_payload.branch }}"
           else
-            CONTENT_BRANCH="${{ github.ref_name }}"
-            FRAMEWORK_BRANCH="${{ github.ref_name }}"
+            BRANCH="${{ github.ref_name }}"
           fi
 
-          echo "content_branch=$CONTENT_BRANCH" >> $GITHUB_OUTPUT
-          echo "framework_branch=$FRAMEWORK_BRANCH" >> $GITHUB_OUTPUT
+          echo "content_branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "framework_branch=$BRANCH" >> $GITHUB_OUTPUT
 
-          if [ "$CONTENT_BRANCH" = "main" ] && [ "$FRAMEWORK_BRANCH" = "main" ]; then
+          if [ "$BRANCH" = "main" ]; then
             echo "environment=production" >> $GITHUB_OUTPUT
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
 
-      # ── SSH to server and run deploy ──
+          echo "📋 Trigger: ${{ github.event_name }}"
+          echo "📋 Branch: $BRANCH"
+          echo "📋 Environment: $([ '$BRANCH' = 'main' ] && echo production || echo staging)"
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -67,8 +78,8 @@ jobs:
               ${{ steps.target.outputs.content_branch }} \
               ${{ steps.target.outputs.framework_branch }}"
 
-      # ── Summary ──
       - name: Deployment summary
+        if: always()
         run: |
           echo "### 🚀 Deployed to ${{ steps.target.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "- Framework: \`${{ steps.target.outputs.framework_branch }}\`" >> $GITHUB_STEP_SUMMARY

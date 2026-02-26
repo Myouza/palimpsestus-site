@@ -70,6 +70,7 @@ cd "$FRAMEWORK_REPO"
 git fetch origin
 git checkout "$FRAMEWORK_BRANCH"
 git reset --hard "origin/$FRAMEWORK_BRANCH"
+echo "  ✓ framework @ $(git rev-parse --short HEAD) ($(git branch --show-current))"
 echo ""
 
 # ── Pull content repo ─────────────────────────────────────
@@ -78,6 +79,7 @@ cd "$CONTENT_REPO"
 git fetch origin
 git checkout "$CONTENT_BRANCH"
 git reset --hard "origin/$CONTENT_BRANCH"
+echo "  ✓ content @ $(git rev-parse --short HEAD) ($(git branch --show-current))"
 echo ""
 
 # ── Merge content into framework ──────────────────────────
@@ -90,7 +92,8 @@ find src/content/novel -name 'meta.yaml' -delete
 if [ -d "$CONTENT_REPO/assets" ]; then
     cp -r "$CONTENT_REPO/assets/" public/assets/
 fi
-echo "  Content files:"
+CONTENT_COUNT=$(find src/content/novel -name '*.mdx' | wc -l)
+echo "  Content files: $CONTENT_COUNT mdx files from $CONTENT_BRANCH"
 find src/content/novel -name '*.mdx' | sort | sed 's/^/    /'
 echo ""
 
