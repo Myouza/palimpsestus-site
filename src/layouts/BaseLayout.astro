@@ -24,8 +24,9 @@ const fullTitle = title === site.name ? site.fullName : `${title} — ${site.nam
     <meta name="robots" content="noai, noimageai" />
     <title>{fullTitle}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preload critical font weights for faster first paint -->
+    <link rel="preload" href="/fonts/SiteSerif-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/SiteSerif-600.woff2" as="font" type="font/woff2" crossorigin />
 
     <ClientRouter />
 

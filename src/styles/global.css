@@ -112,6 +112,8 @@ body {
   font-family: var(--font-serif); font-size: var(--font-size);
   line-height: var(--line-height); transition: var(--transition-color);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection { background: var(--selection); color: var(--text); }
@@ -291,7 +293,7 @@ body {
   position: relative; transition: var(--transition-color);
 }
 .reader-letter::before {
-  content: '✉'; position: absolute; top: 0.75em; right: 1em;
+  content: '\2709\FE0E'; position: absolute; top: 0.75em; right: 1em;
   font-size: 1.2em; opacity: 0.3;
 }
 .reader-letter-meta {
