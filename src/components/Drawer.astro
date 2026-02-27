@@ -51,65 +51,78 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
   function urlToId(pathname: string): string {
     const parts = pathname.replace(/^\/|\/$/g, '').split('/');
     if (parts.length < 2) return '';
-    const volume = parts[0];
-    const rest = parts.slice(1).join('-');
-    return `${volume}/${rest}`;
+    return `${parts[0]}/${parts.slice(1).join('-')}`;
   }
 
   function isAncestorOf(ancestorId: string, targetId: string): boolean {
     if (!ancestorId || !targetId) return false;
-    const aSection = ancestorId.replace(/^[^/]+\//, '');
-    const tSection = targetId.replace(/^[^/]+\//, '');
-    return tSection.startsWith(aSection + '-');
+    const a = ancestorId.replace(/^[^/]+\//, '');
+    const t = targetId.replace(/^[^/]+\//, '');
+    return t.startsWith(a + '-');
   }
 
-  /** Get the short display name from breadcrumb (last segment) */
   function displayName(node: any): string {
-    if (node.breadcrumb && node.breadcrumb.length > 0) {
-      return node.breadcrumb[node.breadcrumb.length - 1];
-    }
-    return node.title;
+    return node.breadcrumb?.length ? node.breadcrumb[node.breadcrumb.length - 1] : node.title;
   }
 
-  let _drawerAC: AbortController | null = null;
+  // ── Drawer open/close: always live DOM queries ──
 
-  function initDrawer() {
-    // Abort all previous listeners from prior calls
-    _drawerAC?.abort();
-    _drawerAC = new AbortController();
-    const { signal } = _drawerAC;
+  function isDrawerOpen(): boolean {
+    return !document.getElementById('drawer-panel')?.classList.contains('-translate-x-full');
+  }
+  function openDrawer() {
+    document.getElementById('drawer-panel')?.classList.remove('-translate-x-full');
+    document.getElementById('drawer-overlay')?.classList.add('active');
+  }
+  function closeDrawer() {
+    document.getElementById('drawer-panel')?.classList.add('-translate-x-full');
+    document.getElementById('drawer-overlay')?.classList.remove('active');
+    (document.activeElement as HTMLElement)?.blur();
+  }
 
-    const toggle = document.getElementById('drawer-toggle');
-    const panel = document.getElementById('drawer-panel');
-    const overlay = document.getElementById('drawer-overlay');
+  // ── Event delegation: bound ONCE on document, survives all View Transition DOM swaps ──
+  // Guard: if script re-runs after full page reload, don't add duplicate listeners
+  if (!(window as any).__drawerDelegated) {
+    (window as any).__drawerDelegated = true;
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+
+      // Toggle button (use closest() to handle clicks on SVG children)
+      if (target.closest('#drawer-toggle')) {
+        isDrawerOpen() ? closeDrawer() : openDrawer();
+        return;
+      }
+
+      // Overlay click
+      if (target.closest('#drawer-overlay')) {
+        closeDrawer();
+        return;
+      }
+
+      // Click outside drawer panel while open → close
+      if (isDrawerOpen() && !target.closest('#drawer-panel')) {
+        closeDrawer();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isDrawerOpen()) {
+        closeDrawer();
+      }
+    });
+  }
+
+  // ── Nav tree rendering (page-specific, rebuilt after each navigation) ──
+
+  function buildDrawerNav() {
     const nav = document.getElementById('drawer-nav');
-    if (!toggle || !panel || !overlay || !nav) return;
+    if (!nav) return;
 
     const raw = (window as any).__palimpsestusTree;
     if (!raw) return;
     const chapters = JSON.parse(raw);
     const currentId = urlToId(window.location.pathname);
-
-    function openDrawer() {
-      panel.classList.remove('-translate-x-full');
-      document.getElementById('drawer-overlay')?.classList.add('active');
-    }
-    function closeDrawer() {
-      panel.classList.add('-translate-x-full');
-      document.getElementById('drawer-overlay')?.classList.remove('active');
-    }
-
-    toggle.addEventListener('click', () => {
-      panel.classList.contains('-translate-x-full') ? openDrawer() : closeDrawer();
-    }, { signal });
-
-    overlay.addEventListener('click', closeDrawer, { signal });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !panel.classList.contains('-translate-x-full')) {
-        closeDrawer();
-      }
-    }, { signal });
 
     nav.innerHTML = '';
 
@@ -139,7 +152,6 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
         let isOpen = isActive || isAncestor;
         if (isOpen) arrow.style.transform = 'rotate(90deg)';
 
-        // CSS Grid collapsible: 0fr ↔ 1fr for smooth animation
         const childBox = document.createElement('div');
         childBox.style.cssText = `display:grid; grid-template-rows:${isOpen ? '1fr' : '0fr'}; transition:grid-template-rows 0.3s ease;`;
         const childInner = document.createElement('div');
@@ -179,10 +191,7 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     chapters.forEach((ch: any) => renderNode(ch, nav));
   }
 
-  initDrawer();
-  document.addEventListener('astro:after-swap', initDrawer);
-  document.addEventListener('astro:before-swap', () => {
-    document.getElementById('drawer-panel')?.classList.add('-translate-x-full');
-    document.getElementById('drawer-overlay')?.classList.remove('active');
-  });
+  buildDrawerNav();
+  document.addEventListener('astro:after-swap', buildDrawerNav);
+  document.addEventListener('astro:before-swap', closeDrawer);
 </script>

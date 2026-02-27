@@ -40,6 +40,7 @@ export const ui = {
     label: '阅读设置',
     bgLabel: '背景',
     fontSizeLabel: '字号',
+    fontWeightLabel: '字重',
     sidenotesLabel: '边注',
     themes: {
       paper: '米色',
@@ -50,6 +51,10 @@ export const ui = {
       small: '小',
       medium: '中',
       large: '大',
+    } as Record<string, string>,
+    fontWeights: {
+      light: '偏细',
+      regular: '标准',
     } as Record<string, string>,
     sidenotes: {
       showAll: '展开全部',

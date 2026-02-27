@@ -1,7 +1,7 @@
 ---
 import { ui } from '@/config/site';
 
-const { themes, fontSizes, sidenotes } = ui.settings;
+const { themes, fontSizes, fontWeights, sidenotes } = ui.settings;
 ---
 
 <button id="settings-toggle"
@@ -49,6 +49,20 @@ const { themes, fontSizes, sidenotes } = ui.settings;
       </div>
     </div>
 
+    {/* ── Font weight (prose only) ── */}
+    <div>
+      <label class="block text-xs mb-2 tracking-wider" style="color: var(--text-muted);">{ui.settings.fontWeightLabel}</label>
+      <div class="flex gap-2">
+        {Object.entries(fontWeights).map(([key, label]) => (
+          <button data-set-fontweight={key}
+            class="fontweight-btn flex-1 py-1.5 rounded text-xs transition-all"
+            style="border: 1px solid var(--border);">
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+
     {/* ── Sidenotes global toggle ── */}
     <div>
       <label class="block text-xs mb-2 tracking-wider" style="color: var(--text-muted);">{ui.settings.sidenotesLabel}</label>
@@ -70,82 +84,111 @@ const { themes, fontSizes, sidenotes } = ui.settings;
 </div>
 
 <script>
-  let _settingsAC: AbortController | null = null;
+  // ── Helpers: always live DOM queries ──
 
-  function initSettings() {
-    // Abort all previous listeners from prior initSettings() calls
-    _settingsAC?.abort();
-    _settingsAC = new AbortController();
-    const { signal } = _settingsAC;
+  function getState() { return (window as any).__palimpsestus; }
 
-    const toggle = document.getElementById('settings-toggle');
-    const panel = document.getElementById('settings-panel');
-    if (!toggle || !panel) return;
-
-    toggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      panel.classList.toggle('hidden');
-    }, { signal });
-
-    document.addEventListener('click', (e) => {
-      if (!panel.contains(e.target as Node) && e.target !== toggle) {
-        panel.classList.add('hidden');
-      }
-    }, { signal });
-
-    const state = (window as any).__palimpsestus;
-
-    function apply(key: string, value: string) {
-      state[key] = value;
-      document.documentElement.setAttribute(`data-${key}`, value);
-      try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
-      updateHighlights();
-    }
-
-    function updateHighlights() {
-      panel.querySelectorAll('.theme-btn').forEach((btn) => {
-        (btn as HTMLElement).style.borderColor =
-          (btn as HTMLElement).dataset.setTheme === state.theme ? 'var(--accent)' : 'transparent';
-      });
-      panel.querySelectorAll('.fontsize-btn').forEach((btn) => {
-        (btn as HTMLElement).style.borderColor =
-          (btn as HTMLElement).dataset.setFontsize === state.fontSize ? 'var(--accent)' : 'var(--border)';
-      });
-
-      const showBtn = document.getElementById('sidenotes-show-all') as HTMLElement;
-      const hideBtn = document.getElementById('sidenotes-hide-all') as HTMLElement;
-      if (showBtn && hideBtn) {
-        showBtn.style.borderColor = state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
-        hideBtn.style.borderColor = !state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
-      }
-    }
-
-    panel.querySelectorAll('[data-set-theme]').forEach((btn) => {
-      btn.addEventListener('click', () => apply('theme', (btn as HTMLElement).dataset.setTheme!), { signal });
-    });
-    panel.querySelectorAll('[data-set-fontsize]').forEach((btn) => {
-      btn.addEventListener('click', () => apply('fontSize', (btn as HTMLElement).dataset.setFontsize!), { signal });
-    });
-
-    document.getElementById('sidenotes-show-all')?.addEventListener('click', () => {
-      state.sidenotesAutoOpen = true;
-      document.querySelectorAll('.sidenote-content').forEach(el => el.classList.add('open'));
-      document.querySelectorAll('.sidenote-trigger').forEach(el => el.classList.add('active'));
-      try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
-      updateHighlights();
-    }, { signal });
-
-    document.getElementById('sidenotes-hide-all')?.addEventListener('click', () => {
-      state.sidenotesAutoOpen = false;
-      document.querySelectorAll('.sidenote-content').forEach(el => el.classList.remove('open'));
-      document.querySelectorAll('.sidenote-trigger').forEach(el => el.classList.remove('active'));
-      try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
-      updateHighlights();
-    }, { signal });
-
+  function apply(key: string, value: string) {
+    const state = getState();
+    state[key] = value;
+    document.documentElement.setAttribute(`data-${key}`, value);
+    try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
     updateHighlights();
   }
 
-  initSettings();
-  document.addEventListener('astro:after-swap', initSettings);
+  function updateHighlights() {
+    const panel = document.getElementById('settings-panel');
+    if (!panel) return;
+    const state = getState();
+
+    panel.querySelectorAll('.theme-btn').forEach((btn) => {
+      (btn as HTMLElement).style.borderColor =
+        (btn as HTMLElement).dataset.setTheme === state.theme ? 'var(--accent)' : 'transparent';
+    });
+    panel.querySelectorAll('.fontsize-btn').forEach((btn) => {
+      (btn as HTMLElement).style.borderColor =
+        (btn as HTMLElement).dataset.setFontsize === state.fontSize ? 'var(--accent)' : 'var(--border)';
+    });
+    panel.querySelectorAll('.fontweight-btn').forEach((btn) => {
+      (btn as HTMLElement).style.borderColor =
+        (btn as HTMLElement).dataset.setFontweight === state.fontWeight ? 'var(--accent)' : 'var(--border)';
+    });
+
+    const showBtn = document.getElementById('sidenotes-show-all') as HTMLElement;
+    const hideBtn = document.getElementById('sidenotes-hide-all') as HTMLElement;
+    if (showBtn && hideBtn) {
+      showBtn.style.borderColor = state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
+      hideBtn.style.borderColor = !state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
+    }
+  }
+
+  // ── Event delegation: bound ONCE on document ──
+  // Guard: prevent duplicate listeners if script re-runs after full page reload
+  if (!(window as any).__settingsDelegated) {
+    (window as any).__settingsDelegated = true;
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const panel = document.getElementById('settings-panel');
+
+      // Toggle button
+      if (target.closest('#settings-toggle')) {
+        panel?.classList.toggle('hidden');
+        return;
+      }
+
+      // Theme buttons
+      const themeBtn = target.closest('[data-set-theme]') as HTMLElement;
+      if (themeBtn?.dataset.setTheme) {
+        apply('theme', themeBtn.dataset.setTheme);
+        return;
+      }
+
+      // Font size buttons
+      const sizeBtn = target.closest('[data-set-fontsize]') as HTMLElement;
+      if (sizeBtn?.dataset.setFontsize) {
+        apply('fontSize', sizeBtn.dataset.setFontsize);
+        return;
+      }
+
+      // Font weight buttons
+      const weightBtn = target.closest('[data-set-fontweight]') as HTMLElement;
+      if (weightBtn?.dataset.setFontweight) {
+        apply('fontWeight', weightBtn.dataset.setFontweight);
+        return;
+      }
+
+      // Sidenotes show all
+      if (target.closest('#sidenotes-show-all')) {
+        const state = getState();
+        state.sidenotesAutoOpen = true;
+        document.querySelectorAll('.sidenote-content').forEach(el => el.classList.add('open'));
+        document.querySelectorAll('.sidenote-trigger').forEach(el => el.classList.add('active'));
+        try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
+        updateHighlights();
+        return;
+      }
+
+      // Sidenotes hide all
+      if (target.closest('#sidenotes-hide-all')) {
+        const state = getState();
+        state.sidenotesAutoOpen = false;
+        document.querySelectorAll('.sidenote-content').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.sidenote-trigger').forEach(el => el.classList.remove('active'));
+        try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
+        updateHighlights();
+        return;
+      }
+
+      // Click outside panel → close
+      if (panel && !panel.contains(target) && !target.closest('#settings-toggle')) {
+        panel.classList.add('hidden');
+      }
+    });
+
+    document.addEventListener('astro:after-swap', updateHighlights);
+  }
+
+  // Always run on script init (covers both first load and full page reload)
+  updateHighlights();
 </script>
