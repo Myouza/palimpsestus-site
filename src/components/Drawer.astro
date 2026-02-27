@@ -81,33 +81,37 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
   }
 
   // ── Event delegation: bound ONCE on document, survives all View Transition DOM swaps ──
+  // Guard: if script re-runs after full page reload, don't add duplicate listeners
+  if (!(window as any).__drawerDelegated) {
+    (window as any).__drawerDelegated = true;
 
-  document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
 
-    // Toggle button (use closest() to handle clicks on SVG children)
-    if (target.closest('#drawer-toggle')) {
-      isDrawerOpen() ? closeDrawer() : openDrawer();
-      return;
-    }
+      // Toggle button (use closest() to handle clicks on SVG children)
+      if (target.closest('#drawer-toggle')) {
+        isDrawerOpen() ? closeDrawer() : openDrawer();
+        return;
+      }
 
-    // Overlay click
-    if (target.closest('#drawer-overlay')) {
-      closeDrawer();
-      return;
-    }
+      // Overlay click
+      if (target.closest('#drawer-overlay')) {
+        closeDrawer();
+        return;
+      }
 
-    // Click outside drawer panel while open → close
-    if (isDrawerOpen() && !target.closest('#drawer-panel')) {
-      closeDrawer();
-    }
-  });
+      // Click outside drawer panel while open → close
+      if (isDrawerOpen() && !target.closest('#drawer-panel')) {
+        closeDrawer();
+      }
+    });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isDrawerOpen()) {
-      closeDrawer();
-    }
-  });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isDrawerOpen()) {
+        closeDrawer();
+      }
+    });
+  }
 
   // ── Nav tree rendering (page-specific, rebuilt after each navigation) ──
 
