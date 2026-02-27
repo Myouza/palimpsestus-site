@@ -49,7 +49,7 @@ const { themes, fontSizes, fontWeights, sidenotes } = ui.settings;
       </div>
     </div>
 
-    {/* ── Font weight ── */}
+    {/* ── Font weight (prose only) ── */}
     <div>
       <label class="block text-xs mb-2 tracking-wider" style="color: var(--text-muted);">{ui.settings.fontWeightLabel}</label>
       <div class="flex gap-2">
@@ -84,89 +84,107 @@ const { themes, fontSizes, fontWeights, sidenotes } = ui.settings;
 </div>
 
 <script>
-  let _settingsAC: AbortController | null = null;
+  // ── Helpers: always live DOM queries ──
 
-  function initSettings() {
-    // Abort all previous listeners from prior initSettings() calls
-    _settingsAC?.abort();
-    _settingsAC = new AbortController();
-    const { signal } = _settingsAC;
+  function getState() { return (window as any).__palimpsestus; }
 
-    const toggle = document.getElementById('settings-toggle');
+  function apply(key: string, value: string) {
+    const state = getState();
+    state[key] = value;
+    document.documentElement.setAttribute(`data-${key}`, value);
+    try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
+    updateHighlights();
+  }
+
+  function updateHighlights() {
     const panel = document.getElementById('settings-panel');
-    if (!toggle || !panel) return;
+    if (!panel) return;
+    const state = getState();
 
-    toggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      panel.classList.toggle('hidden');
-    }, { signal });
+    panel.querySelectorAll('.theme-btn').forEach((btn) => {
+      (btn as HTMLElement).style.borderColor =
+        (btn as HTMLElement).dataset.setTheme === state.theme ? 'var(--accent)' : 'transparent';
+    });
+    panel.querySelectorAll('.fontsize-btn').forEach((btn) => {
+      (btn as HTMLElement).style.borderColor =
+        (btn as HTMLElement).dataset.setFontsize === state.fontSize ? 'var(--accent)' : 'var(--border)';
+    });
+    panel.querySelectorAll('.fontweight-btn').forEach((btn) => {
+      (btn as HTMLElement).style.borderColor =
+        (btn as HTMLElement).dataset.setFontweight === state.fontWeight ? 'var(--accent)' : 'var(--border)';
+    });
 
-    document.addEventListener('click', (e) => {
-      if (!panel.contains(e.target as Node) && e.target !== toggle) {
-        panel.classList.add('hidden');
-      }
-    }, { signal });
+    const showBtn = document.getElementById('sidenotes-show-all') as HTMLElement;
+    const hideBtn = document.getElementById('sidenotes-hide-all') as HTMLElement;
+    if (showBtn && hideBtn) {
+      showBtn.style.borderColor = state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
+      hideBtn.style.borderColor = !state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
+    }
+  }
 
-    const state = (window as any).__palimpsestus;
+  // ── Event delegation: bound ONCE on document ──
 
-    function apply(key: string, value: string) {
-      state[key] = value;
-      document.documentElement.setAttribute(`data-${key}`, value);
-      try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
-      updateHighlights();
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const panel = document.getElementById('settings-panel');
+    const toggle = document.getElementById('settings-toggle');
+
+    // Toggle button
+    if (target.closest('#settings-toggle')) {
+      panel?.classList.toggle('hidden');
+      return;
     }
 
-    function updateHighlights() {
-      panel.querySelectorAll('.theme-btn').forEach((btn) => {
-        (btn as HTMLElement).style.borderColor =
-          (btn as HTMLElement).dataset.setTheme === state.theme ? 'var(--accent)' : 'transparent';
-      });
-      panel.querySelectorAll('.fontsize-btn').forEach((btn) => {
-        (btn as HTMLElement).style.borderColor =
-          (btn as HTMLElement).dataset.setFontsize === state.fontSize ? 'var(--accent)' : 'var(--border)';
-      });
-      panel.querySelectorAll('.fontweight-btn').forEach((btn) => {
-        (btn as HTMLElement).style.borderColor =
-          (btn as HTMLElement).dataset.setFontweight === state.fontWeight ? 'var(--accent)' : 'var(--border)';
-      });
-
-      const showBtn = document.getElementById('sidenotes-show-all') as HTMLElement;
-      const hideBtn = document.getElementById('sidenotes-hide-all') as HTMLElement;
-      if (showBtn && hideBtn) {
-        showBtn.style.borderColor = state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
-        hideBtn.style.borderColor = !state.sidenotesAutoOpen ? 'var(--accent)' : 'var(--border)';
-      }
+    // Theme buttons
+    const themeBtn = target.closest('[data-set-theme]') as HTMLElement;
+    if (themeBtn?.dataset.setTheme) {
+      apply('theme', themeBtn.dataset.setTheme);
+      return;
     }
 
-    panel.querySelectorAll('[data-set-theme]').forEach((btn) => {
-      btn.addEventListener('click', () => apply('theme', (btn as HTMLElement).dataset.setTheme!), { signal });
-    });
-    panel.querySelectorAll('[data-set-fontsize]').forEach((btn) => {
-      btn.addEventListener('click', () => apply('fontSize', (btn as HTMLElement).dataset.setFontsize!), { signal });
-    });
-    panel.querySelectorAll('[data-set-fontweight]').forEach((btn) => {
-      btn.addEventListener('click', () => apply('fontWeight', (btn as HTMLElement).dataset.setFontweight!), { signal });
-    });
+    // Font size buttons
+    const sizeBtn = target.closest('[data-set-fontsize]') as HTMLElement;
+    if (sizeBtn?.dataset.setFontsize) {
+      apply('fontSize', sizeBtn.dataset.setFontsize);
+      return;
+    }
 
-    document.getElementById('sidenotes-show-all')?.addEventListener('click', () => {
+    // Font weight buttons
+    const weightBtn = target.closest('[data-set-fontweight]') as HTMLElement;
+    if (weightBtn?.dataset.setFontweight) {
+      apply('fontWeight', weightBtn.dataset.setFontweight);
+      return;
+    }
+
+    // Sidenotes show all
+    if (target.closest('#sidenotes-show-all')) {
+      const state = getState();
       state.sidenotesAutoOpen = true;
       document.querySelectorAll('.sidenote-content').forEach(el => el.classList.add('open'));
       document.querySelectorAll('.sidenote-trigger').forEach(el => el.classList.add('active'));
       try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
       updateHighlights();
-    }, { signal });
+      return;
+    }
 
-    document.getElementById('sidenotes-hide-all')?.addEventListener('click', () => {
+    // Sidenotes hide all
+    if (target.closest('#sidenotes-hide-all')) {
+      const state = getState();
       state.sidenotesAutoOpen = false;
       document.querySelectorAll('.sidenote-content').forEach(el => el.classList.remove('open'));
       document.querySelectorAll('.sidenote-trigger').forEach(el => el.classList.remove('active'));
       try { localStorage.setItem('palimpsestus-settings', JSON.stringify(state)); } catch(e) {}
       updateHighlights();
-    }, { signal });
+      return;
+    }
 
-    updateHighlights();
-  }
+    // Click outside panel → close
+    if (panel && !panel.contains(target) && !target.closest('#settings-toggle')) {
+      panel.classList.add('hidden');
+    }
+  });
 
-  initSettings();
-  document.addEventListener('astro:after-swap', initSettings);
+  // Initial highlight + refresh after navigation
+  updateHighlights();
+  document.addEventListener('astro:after-swap', updateHighlights);
 </script>

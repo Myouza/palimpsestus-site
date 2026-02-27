@@ -79,7 +79,6 @@
   --sidenote-border: #8B4513;
   --selection: rgba(139, 69, 19, 0.15);
   --font-size: 1.125rem;
-  --font-weight: 400;
   --font-serif: 'SiteSerif', 'NushuSerif-Fallback', serif;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --line-height: 1.9;
@@ -109,9 +108,6 @@
 [data-fontsize='medium'] { --font-size: 1.125rem; }
 [data-fontsize='large']  { --font-size: 1.25rem; }
 
-[data-fontweight='light']   { --font-weight: 300; }
-[data-fontweight='regular'] { --font-weight: 400; }
-
 /* ============================================================
    Base — serif everywhere (NYT-style)
    ============================================================ */
@@ -121,11 +117,8 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--bg); color: var(--text);
   font-family: var(--font-serif); font-size: var(--font-size);
-  font-weight: var(--font-weight);
+  font-weight: 400;
   line-height: var(--line-height); transition: var(--transition-color);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 ::selection { background: var(--selection); color: var(--text); }
@@ -163,8 +156,12 @@ body {
   --tw-prose-pre-code: var(--text); --tw-prose-pre-bg: var(--bg-surface);
   --tw-prose-th-borders: var(--border); --tw-prose-td-borders: var(--border);
   font-size: var(--font-size); font-family: var(--font-serif);
+  font-weight: var(--article-font-weight, 400);
   max-width: 100%; line-height: var(--line-height);
 }
+
+/* Font weight toggle — only affects prose (article body), never UI */
+[data-fontweight='light'] .prose { --article-font-weight: 300; }
 
 .prose p { text-indent: 2em; margin-top: 0.8em; margin-bottom: 0.8em; }
 .prose h1, .prose h2, .prose h3 { text-indent: 0; font-weight: 600; }
