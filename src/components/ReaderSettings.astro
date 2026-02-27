@@ -1,7 +1,7 @@
 ---
 import { ui } from '@/config/site';
 
-const { themes, fontSizes, sidenotes } = ui.settings;
+const { themes, fontSizes, fontWeights, sidenotes } = ui.settings;
 ---
 
 <button id="settings-toggle"
@@ -42,6 +42,20 @@ const { themes, fontSizes, sidenotes } = ui.settings;
         {Object.entries(fontSizes).map(([key, label]) => (
           <button data-set-fontsize={key}
             class="fontsize-btn flex-1 py-1.5 rounded text-xs transition-all"
+            style="border: 1px solid var(--border);">
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* ── Font weight ── */}
+    <div>
+      <label class="block text-xs mb-2 tracking-wider" style="color: var(--text-muted);">{ui.settings.fontWeightLabel}</label>
+      <div class="flex gap-2">
+        {Object.entries(fontWeights).map(([key, label]) => (
+          <button data-set-fontweight={key}
+            class="fontweight-btn flex-1 py-1.5 rounded text-xs transition-all"
             style="border: 1px solid var(--border);">
             {label}
           </button>
@@ -111,6 +125,10 @@ const { themes, fontSizes, sidenotes } = ui.settings;
         (btn as HTMLElement).style.borderColor =
           (btn as HTMLElement).dataset.setFontsize === state.fontSize ? 'var(--accent)' : 'var(--border)';
       });
+      panel.querySelectorAll('.fontweight-btn').forEach((btn) => {
+        (btn as HTMLElement).style.borderColor =
+          (btn as HTMLElement).dataset.setFontweight === state.fontWeight ? 'var(--accent)' : 'var(--border)';
+      });
 
       const showBtn = document.getElementById('sidenotes-show-all') as HTMLElement;
       const hideBtn = document.getElementById('sidenotes-hide-all') as HTMLElement;
@@ -125,6 +143,9 @@ const { themes, fontSizes, sidenotes } = ui.settings;
     });
     panel.querySelectorAll('[data-set-fontsize]').forEach((btn) => {
       btn.addEventListener('click', () => apply('fontSize', (btn as HTMLElement).dataset.setFontsize!), { signal });
+    });
+    panel.querySelectorAll('[data-set-fontweight]').forEach((btn) => {
+      btn.addEventListener('click', () => apply('fontWeight', (btn as HTMLElement).dataset.setFontweight!), { signal });
     });
 
     document.getElementById('sidenotes-show-all')?.addEventListener('click', () => {

@@ -97,6 +97,8 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     function closeDrawer() {
       panel.classList.add('-translate-x-full');
       document.getElementById('drawer-overlay')?.classList.remove('active');
+      // Remove focus outline from toggle button
+      (document.activeElement as HTMLElement)?.blur();
     }
 
     toggle.addEventListener('click', () => {

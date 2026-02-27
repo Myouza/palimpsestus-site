@@ -13,6 +13,13 @@
 
 @font-face {
   font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-300.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SiteSerif';
   src: url('/fonts/SiteSerif-400.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
@@ -72,6 +79,7 @@
   --sidenote-border: #8B4513;
   --selection: rgba(139, 69, 19, 0.15);
   --font-size: 1.125rem;
+  --font-weight: 400;
   --font-serif: 'SiteSerif', 'NushuSerif-Fallback', serif;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --line-height: 1.9;
@@ -101,6 +109,9 @@
 [data-fontsize='medium'] { --font-size: 1.125rem; }
 [data-fontsize='large']  { --font-size: 1.25rem; }
 
+[data-fontweight='light']   { --font-weight: 300; }
+[data-fontweight='regular'] { --font-weight: 400; }
+
 /* ============================================================
    Base — serif everywhere (NYT-style)
    ============================================================ */
@@ -110,6 +121,7 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--bg); color: var(--text);
   font-family: var(--font-serif); font-size: var(--font-size);
+  font-weight: var(--font-weight);
   line-height: var(--line-height); transition: var(--transition-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

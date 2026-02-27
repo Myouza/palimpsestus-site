@@ -25,9 +25,10 @@ import glob
 
 FONT_DIR = "/opt/palimpsestus/fonts"
 
-# Only the weights our CSS actually uses.
+# Weights our CSS uses: 400/600/700 default + 300 for user "thin" preference.
 # Maps CSS font-weight → source OTF filename.
 WEIGHTS = {
+    300: "NotoSerifCJKsc-Light.otf",
     400: "NotoSerifCJKsc-Regular.otf",
     600: "NotoSerifCJKsc-SemiBold.otf",
     700: "NotoSerifCJKsc-Bold.otf",
