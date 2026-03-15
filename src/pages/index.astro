@@ -32,6 +32,8 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
   </script>
 
   <script>
+    import { nushuMarkupToHtml } from '@/lib/nushu-markup';
+
     /** Get short display name from breadcrumb (last segment) */
     function displayName(node: any): string {
       if (node.breadcrumb && node.breadcrumb.length > 0) {
@@ -60,7 +62,7 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
 
           const link = document.createElement('a');
           link.href = node.url;
-          link.textContent = displayName(node);
+          link.innerHTML = nushuMarkupToHtml(displayName(node));
           link.style.cssText = `display:block; padding:0.35rem 0; color:var(--text); transition:opacity 0.15s; font-size:${node.depth <= 1 ? '0.95rem' : '0.875rem'};`;
           link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
           link.addEventListener('mouseleave', () => link.style.opacity = '1');
@@ -96,7 +98,7 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
 
           const link = document.createElement('a');
           link.href = ch.url;
-          link.textContent = ch.title;
+          link.innerHTML = nushuMarkupToHtml(ch.title);
           link.style.cssText = 'font-size:1.05rem; font-weight:400; color:var(--text); transition:opacity 0.15s; flex:1;';
           link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
           link.addEventListener('mouseleave', () => link.style.opacity = '1');
@@ -126,7 +128,7 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
 
           const link = document.createElement('a');
           link.href = ch.url;
-          link.textContent = ch.title;
+          link.innerHTML = nushuMarkupToHtml(ch.title);
           link.style.cssText = 'font-size:1.05rem; font-weight:400; color:var(--text); transition:opacity 0.15s; flex:1;';
           link.addEventListener('mouseenter', () => link.style.opacity = '0.6');
           link.addEventListener('mouseleave', () => link.style.opacity = '1');

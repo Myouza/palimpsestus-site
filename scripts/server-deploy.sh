@@ -92,6 +92,11 @@ find src/content/novel -name 'meta.yaml' -delete
 if [ -d "$CONTENT_REPO/assets" ]; then
     cp -r "$CONTENT_REPO/assets/" public/assets/
 fi
+if [ -d "$CONTENT_REPO/images" ]; then
+    mkdir -p public/images
+    cp -r "$CONTENT_REPO/images/" public/images/
+    echo "  Images: $(find public/images -type f | wc -l) files"
+fi
 CONTENT_COUNT=$(find src/content/novel -name '*.mdx' | wc -l)
 echo "  Content files: $CONTENT_COUNT mdx files from $CONTENT_BRANCH"
 find src/content/novel -name '*.mdx' | sort | sed 's/^/    /'

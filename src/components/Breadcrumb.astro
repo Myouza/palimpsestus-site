@@ -1,5 +1,6 @@
 ---
 import { ui } from '@/config/site';
+import { nushuMarkupToHtml } from '@/lib/nushu-markup';
 
 interface Props {
   /** For chapter pages: just the chapter title (displayed as current) */
@@ -43,19 +44,19 @@ const crumbs = buildCrumbs();
   {isCurrentChapter ? (
     <>
       <span class="opacity-40">{sep}</span>
-      <span style="color: var(--text);">{chapterTitle}</span>
+      <span style="color: var(--text);" set:html={nushuMarkupToHtml(chapterTitle)} />
     </>
   ) : (
     <>
       <span class="opacity-40">{sep}</span>
-      <a href={chapterUrl} class="hover:opacity-70 transition-opacity">{chapterTitle}</a>
+      <a href={chapterUrl} class="hover:opacity-70 transition-opacity" set:html={nushuMarkupToHtml(chapterTitle)} />
       {crumbs.map(({ label, url, isCurrent }) => (
         <>
           <span class="opacity-40">{sep}</span>
           {isCurrent ? (
-            <span style="color: var(--text);">{label}</span>
+            <span style="color: var(--text);" set:html={nushuMarkupToHtml(label)} />
           ) : (
-            <a href={url} class="hover:opacity-70 transition-opacity">{label}</a>
+            <a href={url} class="hover:opacity-70 transition-opacity" set:html={nushuMarkupToHtml(label)} />
           )}
         </>
       ))}

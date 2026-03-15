@@ -1,5 +1,6 @@
 ---
 import { ui } from '@/config/site';
+import { nushuMarkupToHtml } from '@/lib/nushu-markup';
 import type { TreeNode } from '@/lib/tree';
 
 interface Props {
@@ -17,7 +18,7 @@ const { prev, next } = Astro.props;
       class="flex-1 flex flex-col items-start py-3 px-4 rounded-lg transition-all duration-200 hover:opacity-80"
       style="background: var(--bg-surface);">
       <span class="text-xs mb-1" style="color: var(--text-muted);">{ui.nav.prevArrow} {ui.nav.prevSection}</span>
-      <span class="text-sm" style="color: var(--text);">{prev.title}</span>
+      <span class="text-sm" style="color: var(--text);" set:html={nushuMarkupToHtml(prev.title)} />
     </a>
   ) : <div class="flex-1"></div>}
   {next ? (
@@ -25,7 +26,7 @@ const { prev, next } = Astro.props;
       class="flex-1 flex flex-col items-end py-3 px-4 rounded-lg transition-all duration-200 hover:opacity-80 text-right"
       style="background: var(--bg-surface);">
       <span class="text-xs mb-1" style="color: var(--text-muted);">{ui.nav.nextSection} {ui.nav.nextArrow}</span>
-      <span class="text-sm" style="color: var(--text);">{next.title}</span>
+      <span class="text-sm" style="color: var(--text);" set:html={nushuMarkupToHtml(next.title)} />
     </a>
   ) : <div class="flex-1"></div>}
 </nav>
