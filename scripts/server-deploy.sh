@@ -90,11 +90,12 @@ mkdir -p src/content/novel
 cp -r "$CONTENT_REPO"/[0-9]*/ src/content/novel/ 2>/dev/null || true
 find src/content/novel -name 'meta.yaml' -delete
 if [ -d "$CONTENT_REPO/assets" ]; then
-    cp -r "$CONTENT_REPO/assets/" public/assets/
+    mkdir -p public/assets
+    cp -r "$CONTENT_REPO"/assets/* public/assets/
 fi
 if [ -d "$CONTENT_REPO/images" ]; then
     mkdir -p public/images
-    cp -r "$CONTENT_REPO/images/" public/images/
+    cp -r "$CONTENT_REPO"/images/* public/images/
     echo "  Images: $(find public/images -type f | wc -l) files"
 fi
 CONTENT_COUNT=$(find src/content/novel -name '*.mdx' | wc -l)
