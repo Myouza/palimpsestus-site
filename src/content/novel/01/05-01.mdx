@@ -1,0 +1,43 @@
+---
+title: "Frontmatter {nushu|女书}标记测试"
+breadcrumb: ["{nushu|女书}标记测试"]
+draft: false
+---
+
+import Nushu from '@/components/Nushu.astro';
+
+## Frontmatter 标记语法测试
+
+本页测试 `{nushu|...}` 标记语法在 frontmatter 中的渲染效果。
+
+### 预期效果
+
+以下位置的「女书」二字应当显示为女书字形，而非普通汉字：
+
+1. 本页 `<h1>` 标题：「Frontmatter **女书**标记测试」
+2. 面包屑导航：「**女书**标记测试」
+3. 左侧抽屉导航中的本页链接
+4. 首页目录中的本页链接
+5. 上一页/下一页翻页按钮（从相邻页面查看）
+
+### 以下位置应显示纯汉字
+
+浏览器标签页标题（`<title>` 标签）应显示「Frontmatter 女书标记测试 — 六宫月影」，不含女书字形。
+
+---
+
+## 正文中的 Nushu 组件对照
+
+正文中继续使用 `<Nushu>` 组件：<Nushu>天下女人是一家</Nushu>。
+
+混排：据传<Nushu>女书</Nushu>为女性所创，用于<Nushu>姊妹</Nushu>之间通信。
+
+---
+
+## 变体标记测试
+
+以下标记在正文中不会生效（正文用 `<Nushu>` 组件），仅供 frontmatter 参考：
+
+- 默认：`{nushu|女书}` → 使用默认 calt 连字
+- 原始书法：`{nushu:original|女书}` → 使用 ss01
+- 笔画变体：`{nushu:alt|女书}` → 使用 ss03
