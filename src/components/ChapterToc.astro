@@ -6,6 +6,7 @@
  */
 import type { TreeNode } from '@/lib/tree';
 import { flattenTree } from '@/lib/tree';
+import { nushuMarkupToHtml } from '@/lib/nushu-markup';
 
 interface Props {
   nodes: TreeNode[];
@@ -24,7 +25,7 @@ const flatNodes = flattenTree(nodes);
           style={`padding-left: ${node.depth * 1.25}rem;`}
           data-depth={node.depth}>
           <span class="chapter-toc-dot">·</span>
-          <span>{node.breadcrumb.length > 0 ? node.breadcrumb[node.breadcrumb.length - 1] : node.title}</span>
+          <span set:html={nushuMarkupToHtml(node.breadcrumb.length > 0 ? node.breadcrumb[node.breadcrumb.length - 1] : node.title)} />
         </a>
       ))}
     </nav>

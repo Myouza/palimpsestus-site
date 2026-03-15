@@ -1,4 +1,6 @@
 ---
+import { nushuMarkupToHtml, stripNushuMarkup } from '@/lib/nushu-markup';
+
 interface SubtitleSegment {
   chars: string;
   note: string;
@@ -17,10 +19,10 @@ const { title, chapterLabel, subtitle, subtitleSegments, coverImage } = Astro.pr
 
 <header class="chapter-header">
   {chapterLabel && (
-    <div class="chapter-label">{chapterLabel}</div>
+    <div class="chapter-label" set:html={nushuMarkupToHtml(chapterLabel)} />
   )}
 
-  <h1 class="chapter-title">{title}</h1>
+  <h1 class="chapter-title" set:html={nushuMarkupToHtml(title)} />
 
   {subtitle && !subtitleSegments && (
     <div class="chapter-subtitle">{subtitle}</div>
@@ -43,7 +45,7 @@ const { title, chapterLabel, subtitle, subtitleSegments, coverImage } = Astro.pr
   )}
 
   {coverImage && (
-    <img src={coverImage} alt={title} class="chapter-cover" loading="lazy" />
+    <img src={coverImage} alt={stripNushuMarkup(title)} class="chapter-cover" loading="lazy" />
   )}
 
   <hr class="chapter-divider" />

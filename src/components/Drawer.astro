@@ -48,6 +48,8 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
 </script>
 
 <script>
+  import { nushuMarkupToHtml } from '@/lib/nushu-markup';
+
   function urlToId(pathname: string): string {
     const parts = pathname.replace(/^\/|\/$/g, '').split('/');
     if (parts.length < 2) return '';
@@ -169,7 +171,7 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
 
         const link = document.createElement('a');
         link.href = node.url;
-        link.textContent = displayName(node);
+        link.innerHTML = nushuMarkupToHtml(displayName(node));
         link.style.cssText = `display:block; padding:0.3rem 0; font-size:0.875rem; flex:1; min-width:0; transition:opacity 0.15s; ${isActive ? 'font-weight:600; color:var(--accent);' : 'color:var(--text);'}`;
         row.appendChild(link);
         container.appendChild(row);
@@ -181,7 +183,7 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
 
         const link = document.createElement('a');
         link.href = node.url;
-        link.textContent = displayName(node);
+        link.innerHTML = nushuMarkupToHtml(displayName(node));
         link.style.cssText = `display:block; padding:0.3rem 0; font-size:0.8125rem; flex:1; min-width:0; transition:opacity 0.15s; ${isActive ? 'font-weight:600; color:var(--accent);' : 'color:var(--text); opacity:0.85;'}`;
         row.appendChild(link);
         container.appendChild(row);
