@@ -1,11 +1,14 @@
 ---
 import { getCollection } from 'astro:content';
+import { readFileSync } from 'node:fs';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { site } from '@/config/site';
 import { buildNavigation } from '@/lib/tree';
 
 const entries = await getCollection('novel');
 const { chapters } = buildNavigation(entries);
+
+const logoSvg = readFileSync('public/logo.svg', 'utf-8');
 
 const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
   return {
@@ -19,6 +22,7 @@ const chaptersJson = JSON.stringify(chapters.map(function ser(n: any): any {
 <BaseLayout title={site.name}>
   <main class="flex-1 max-w-2xl mx-auto w-full px-6 pt-20 pb-12">
     <header class="text-center mb-16">
+      <div class="site-logo mx-auto mb-6" style="width: 120px; height: 120px; color: var(--accent); transition: opacity 0.3s ease;" set:html={logoSvg} />
       <h1 class="text-3xl font-semibold mb-2 tracking-wide" style="color: var(--text);">{site.name}</h1>
       <p class="text-sm tracking-[0.3em]" style="color: var(--text-muted);">{site.nameEn.toUpperCase()}</p>
       <div class="mt-6 mx-auto w-16" style="border-top: 1px solid var(--border);"></div>
