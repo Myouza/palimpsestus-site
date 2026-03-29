@@ -7,6 +7,8 @@ const novel = defineCollection({
     title: z.string(),
     breadcrumb: z.array(z.string()),
     draft: z.boolean().default(false),
+    /** Mark as test/demo content — hidden unless SHOW_TESTS env var is set */
+    test: z.boolean().default(false),
     publishDate: z.string().optional(),
 
     // ── Chapter-level fields (optional, for depth-0 nodes) ──

@@ -98,6 +98,10 @@ if [ -d "$CONTENT_REPO/images" ]; then
     cp -r "$CONTENT_REPO"/images/* public/images/
     echo "  Images: $(find public/images -type f | wc -l) files"
 fi
+if [ -d "$CONTENT_REPO/branding" ]; then
+    cp -r "$CONTENT_REPO"/branding/* public/
+    echo "  Branding: favicon, logo, icons, og-image"
+fi
 CONTENT_COUNT=$(find src/content/novel -name '*.mdx' | wc -l)
 echo "  Content files: $CONTENT_COUNT mdx files from $CONTENT_BRANCH"
 find src/content/novel -name '*.mdx' | sort | sed 's/^/    /'

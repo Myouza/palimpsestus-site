@@ -12,13 +12,17 @@ import { buildNavigation, getReadingOrder, flattenTree } from '@/lib/tree';
 import { nushuMarkupToHtml, stripNushuMarkup } from '@/lib/nushu-markup';
 
 export async function getStaticPaths() {
-  const entries = await getCollection('novel');
+  const showTests = !!import.meta.env.SHOW_TESTS;
+  const entries = await getCollection('novel', ({ data }) => {
+    if (data.draft) return false;
+    if (data.test && !showTests) return false;
+    return true;
+  });
   const { chapters, flatList } = buildNavigation(entries);
 
   const paths = [];
 
   for (const entry of entries) {
-    if (entry.data.draft) continue;
     const slashIdx = entry.id.indexOf('/');
     const volume = entry.id.substring(0, slashIdx);
     const sectionPart = entry.id.substring(slashIdx + 1);
