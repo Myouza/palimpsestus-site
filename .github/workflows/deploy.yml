@@ -29,6 +29,11 @@ on:
         options:
           - main
           - preview
+      show_tests:
+        description: 'Include test/demo content'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: deploy-${{ github.event.inputs.branch || (github.event_name == 'repository_dispatch' && github.event.client_payload.branch) || github.ref_name }}
@@ -76,7 +81,8 @@ jobs:
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "bash /opt/palimpsestus/repos/framework/scripts/server-deploy.sh \
               ${{ steps.target.outputs.content_branch }} \
-              ${{ steps.target.outputs.framework_branch }}"
+              ${{ steps.target.outputs.framework_branch }} \
+              ${{ github.event.inputs.show_tests == 'true' && '--show-tests' || '' }}"
 
       - name: Deployment summary
         if: always()
