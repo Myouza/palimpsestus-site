@@ -16,3 +16,12 @@ src/content/novel/
 !src/content/novel/.gitkeep
 public/images/
 !public/images/.gitkeep
+
+# Branding assets (from content repo branding/ directory)
+public/favicon.svg
+public/logo.svg
+public/apple-touch-icon.png
+public/icon-192.png
+public/icon-512.png
+public/og-image.png
+public/site.webmanifest

@@ -164,8 +164,11 @@ body {
 [data-fontweight='light'] .prose { --article-font-weight: 300; }
 
 .prose p { text-indent: 2em; margin-top: 0.8em; margin-bottom: 0.8em; }
+.prose .compact { margin-top: 0.8em; margin-bottom: 0.8em; }
+.prose .compact p { margin-top: 0; margin-bottom: 0; }
 .prose h1, .prose h2, .prose h3 { text-indent: 0; font-weight: 600; }
 .prose blockquote { border-left-width: 2px; font-style: normal; }
+.prose blockquote p { text-indent: 0; }
 .prose code { background: var(--bg-surface); padding: 0.15em 0.35em; border-radius: 3px; font-size: 0.875em; }
 .prose pre { background: var(--bg-surface) !important; border: 1px solid var(--border); }
 .prose a { text-decoration-thickness: 1px; text-underline-offset: 2px; }
@@ -238,6 +241,27 @@ body {
   padding: 0 0.75em; color: var(--text-muted); font-size: 1rem;
 }
 .chapter-cover { max-width: 80%; margin: 2rem auto; border-radius: 4px; display: block; }
+
+/* ── Chapter Illustration (inline SVG with blueprint treatment) ── */
+.chapter-illustration {
+  max-width: 80%;
+  margin: 2rem auto;
+  display: block;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center;
+  border-radius: 4px;
+}
+.chapter-illustration svg { width: 100%; height: auto; display: block; }
+.chapter-illustration .seal { fill: var(--accent); }
+.chapter-illustration .letters {
+  fill: var(--accent);
+  fill-opacity: 0.15;
+  stroke: var(--accent);
+  stroke-opacity: 0.35;
+}
 
 /* ============================================================
    Subtitle Segments

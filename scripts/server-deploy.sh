@@ -28,8 +28,12 @@ VENV_PYTHON="$PALIMPSESTUS_ROOT/venv/bin/python3"
 WEB_ROOT="/var/www"
 
 # ── Arguments ──────────────────────────────────────────────
-CONTENT_BRANCH="${1:?Usage: $0 <content_branch> <framework_branch>}"
+CONTENT_BRANCH="${1:?Usage: $0 <content_branch> <framework_branch> [--show-tests]}"
 FRAMEWORK_BRANCH="${2:-main}"
+SHOW_TESTS=""
+if [ "${3:-}" = "--show-tests" ]; then
+    SHOW_TESTS="1"
+fi
 
 # Determine deploy target
 if [ "$CONTENT_BRANCH" = "main" ] && [ "$FRAMEWORK_BRANCH" = "main" ]; then
@@ -46,6 +50,9 @@ echo "╚═══════════════════════�
 echo "  Framework: $FRAMEWORK_BRANCH"
 echo "  Content:   $CONTENT_BRANCH"
 echo "  Target:    $DEPLOY_TARGET → $DEPLOY_DIR"
+if [ -n "$SHOW_TESTS" ]; then
+    echo "  Tests:     VISIBLE"
+fi
 echo ""
 
 # ── Load nvm (non-interactive shell) ───────────────────────
@@ -98,6 +105,10 @@ if [ -d "$CONTENT_REPO/images" ]; then
     cp -r "$CONTENT_REPO"/images/* public/images/
     echo "  Images: $(find public/images -type f | wc -l) files"
 fi
+if [ -d "$CONTENT_REPO/branding" ]; then
+    cp -r "$CONTENT_REPO"/branding/* public/
+    echo "  Branding: favicon, logo, icons, og-image"
+fi
 CONTENT_COUNT=$(find src/content/novel -name '*.mdx' | wc -l)
 echo "  Content files: $CONTENT_COUNT mdx files from $CONTENT_BRANCH"
 find src/content/novel -name '*.mdx' | sort | sed 's/^/    /'
@@ -115,7 +126,7 @@ echo ""
 
 # ── Build ─────────────────────────────────────────────────
 echo "── Building site ──"
-npm run build 2>&1 | tail -5
+SHOW_TESTS="$SHOW_TESTS" npm run build 2>&1 | tail -5
 echo ""
 
 # ── Deploy ────────────────────────────────────────────────

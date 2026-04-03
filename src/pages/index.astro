@@ -5,7 +5,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { site } from '@/config/site';
 import { buildNavigation } from '@/lib/tree';
 
-const entries = await getCollection('novel');
+const showTests = !!import.meta.env.SHOW_TESTS;
+const entries = await getCollection('novel', ({ data }) => {
+  if (data.draft) return false;
+  if (data.test && !showTests) return false;
+  return true;
+});
 const { chapters } = buildNavigation(entries);
 
 const logoSvg = readFileSync('public/logo.svg', 'utf-8');
