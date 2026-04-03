@@ -1,4 +1,5 @@
 ---
+import { readFileSync } from 'node:fs';
 import { nushuMarkupToHtml, stripNushuMarkup } from '@/lib/nushu-markup';
 
 interface SubtitleSegment {
@@ -15,6 +16,14 @@ interface Props {
 }
 
 const { title, chapterLabel, subtitle, subtitleSegments, coverImage } = Astro.props;
+
+// For SVG coverImages, read inline for CSS theme control
+let inlineSvg: string | null = null;
+if (coverImage?.endsWith('.svg')) {
+  try {
+    inlineSvg = readFileSync(`public${coverImage}`, 'utf-8');
+  } catch { /* fallback to <img> */ }
+}
 ---
 
 <header class="chapter-header">
@@ -44,9 +53,11 @@ const { title, chapterLabel, subtitle, subtitleSegments, coverImage } = Astro.pr
     </div>
   )}
 
-  {coverImage && (
+  {inlineSvg ? (
+    <div class="chapter-illustration" set:html={inlineSvg} />
+  ) : coverImage ? (
     <img src={coverImage} alt={stripNushuMarkup(title)} class="chapter-cover" loading="lazy" />
-  )}
+  ) : null}
 
   <hr class="chapter-divider" />
 </header>
