@@ -164,6 +164,7 @@ body {
 [data-fontweight='light'] .prose { --article-font-weight: 300; }
 
 .prose p { text-indent: 2em; margin-top: 0.8em; margin-bottom: 0.8em; }
+.prose .compact p { margin-top: 0; margin-bottom: 0; }
 .prose h1, .prose h2, .prose h3 { text-indent: 0; font-weight: 600; }
 .prose blockquote { border-left-width: 2px; font-style: normal; }
 .prose code { background: var(--bg-surface); padding: 0.15em 0.35em; border-radius: 3px; font-size: 0.875em; }
