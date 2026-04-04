@@ -13,7 +13,7 @@ const { themes, fontSizes, fontWeights, sidenotes } = ui.settings;
 </button>
 
 <div id="settings-panel" class="fixed z-30 rounded-lg p-5 w-64 hidden"
-  style="top: 50%; right: 3rem; transform: translateY(-50%); background: var(--bg-surface); border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+  style="top: 65%; right: 34px; transform: translateY(-50%); background: var(--bg-surface); border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
   <div class="space-y-5">
 
     {/* ── Theme ── */}
@@ -135,8 +135,12 @@ const { themes, fontSizes, fontWeights, sidenotes } = ui.settings;
       if (target.closest('#settings-toggle')) {
         panel?.classList.toggle('hidden');
         const isOpen = panel && !panel.classList.contains('hidden');
-        if (isOpen) toggle?.classList.add('panel-open');
-        else toggle?.classList.remove('panel-open');
+        if (isOpen) {
+          toggle?.classList.add('panel-open');
+        } else {
+          toggle?.classList.remove('panel-open');
+          (window as any).__resetTabScroll?.();
+        }
         return;
       }
 
@@ -187,6 +191,7 @@ const { themes, fontSizes, fontWeights, sidenotes } = ui.settings;
       if (panel && !panel.contains(target) && !target.closest('#settings-toggle')) {
         panel.classList.add('hidden');
         toggle?.classList.remove('panel-open');
+        (window as any).__resetTabScroll?.();
       }
     });
 

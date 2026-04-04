@@ -99,7 +99,6 @@ body {
 
 .page-tab {
   position: fixed;
-  top: 50%;
   z-index: 50;
   width: 24px;
   height: 44px;
@@ -112,7 +111,6 @@ body {
   cursor: pointer;
   padding: 0;
   transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-  transform: translateY(-50%);
 }
 
 /* Invisible touch-area extension (inward from screen edge) */
@@ -126,15 +124,19 @@ body {
 
 .page-tab-left {
   left: 0;
+  top: 30%;
   border-left: none;
   border-radius: 0 4px 4px 0;
+  transform: translateY(-50%);
 }
 .page-tab-left::before { right: -20px; }
 
 .page-tab-right {
   right: 10px;
+  top: 65%;
   border-right: none;
   border-radius: 4px 0 0 4px;
+  transform: translateY(-50%);
 }
 .page-tab-right::before { left: -20px; }
 
@@ -149,10 +151,9 @@ body {
 }
 
 /* Retracted state — slide out, only 8px strip visible.
-   Strip takes on border color for a subtle page-edge hint. */
+   Keep bg-surface so the strip is a visible solid tab, not invisible. */
 .page-tab.retracted {
-  background: transparent;
-  border-color: var(--border);
+  color: var(--border);
 }
 .page-tab-left.retracted {
   transform: translateY(-50%) translateX(-16px);
@@ -164,7 +165,6 @@ body {
 /* When associated panel is open, force tab to expanded state */
 .page-tab.panel-open {
   transform: translateY(-50%);
-  background: var(--bg-surface);
 }
 
 /* ============================================================

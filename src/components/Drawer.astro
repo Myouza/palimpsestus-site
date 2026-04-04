@@ -81,6 +81,8 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
     document.getElementById('drawer-overlay')?.classList.remove('active');
     document.getElementById('drawer-toggle')?.classList.remove('panel-open');
     (document.activeElement as HTMLElement)?.blur();
+    // Reset scroll tracking so tabs stay expanded after panel use
+    (window as any).__resetTabScroll?.();
   }
 
   // ── Event delegation: bound ONCE on document, survives all View Transition DOM swaps ──
