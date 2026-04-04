@@ -12,10 +12,6 @@ interface Props {
 
 const { title, description = site.description } = Astro.props;
 const fullTitle = title === site.name ? site.fullName : `${title} — ${site.name}`;
-
-// Font cache version: build timestamp auto-busts iOS PWA aggressive caching.
-// No manual maintenance needed — every build gets a fresh version.
-const fv = Date.now();
 ---
 
 <!doctype html>
@@ -38,19 +34,9 @@ const fv = Date.now();
     <meta property="og:image" content={`${site.url}/og-image.png`} />
     <meta property="og:url" content={site.url} />
     <meta property="og:locale" content="zh_CN" />
-    <!-- Preload critical font weights (version auto-set at build time) -->
-    <link rel="preload" href={`/fonts/SiteSerif-400.woff2?v=${fv}`} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={`/fonts/SiteSerif-600.woff2?v=${fv}`} as="font" type="font/woff2" crossorigin />
-
-    {/* @font-face declarations with auto-versioned URLs */}
-    <Fragment set:html={`<style>
-@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-300.woff2?v=${fv}') format('woff2'); font-weight: 300; font-style: normal; font-display: block; }
-@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-400.woff2?v=${fv}') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
-@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-600.woff2?v=${fv}') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
-@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-700.woff2?v=${fv}') format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
-@font-face { font-family: 'NushuSerif-Fallback'; src: url('/fonts/NushuSerif.woff2?v=${fv}') format('woff2'); font-weight: 400; font-style: normal; font-display: block; unicode-range: U+1B170-1B2FF, U+16FE1; }
-@font-face { font-family: 'NushuSerif'; src: url('/fonts/NushuSerif.woff2?v=${fv}') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
-</style>`} />
+    <!-- Preload critical font weights (__FONT_VERSION__ replaced by deploy script) -->
+    <link rel="preload" href="/fonts/SiteSerif-400.woff2?v=__FONT_VERSION__" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/SiteSerif-600.woff2?v=__FONT_VERSION__" as="font" type="font/woff2" crossorigin />
 
     <ClientRouter />
 

@@ -7,9 +7,46 @@
    ============================================================
    SiteSerif: build-time subsets from NotoSerifCJKsc OTF source files.
    Python scans all content, extracts unique chars, generates woff2.
-   @font-face declarations live in BaseLayout.astro with auto-versioned
-   URLs (build timestamp) to bust iOS PWA aggressive font caching.
+
+   Cache busting: __FONT_VERSION__ is replaced by server-deploy.sh
+   with a Unix timestamp before each build. This ensures iOS PWA
+   and aggressive browser caches always fetch fresh fonts.
    ============================================================ */
+
+@font-face {
+  font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-300.woff2?v=__FONT_VERSION__') format('woff2');
+  font-weight: 300; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-400.woff2?v=__FONT_VERSION__') format('woff2');
+  font-weight: 400; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-600.woff2?v=__FONT_VERSION__') format('woff2');
+  font-weight: 600; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'SiteSerif';
+  src: url('/fonts/SiteSerif-700.woff2?v=__FONT_VERSION__') format('woff2');
+  font-weight: 700; font-style: normal; font-display: block;
+}
+
+/* Nüshu serif — official woff2 from nushu-script/Nyushu v1.0022
+   55KB, includes 396 nüshu + 1765 hanzi double-encoded glyphs. */
+@font-face {
+  font-family: 'NushuSerif-Fallback';
+  src: url('/fonts/NushuSerif.woff2?v=__FONT_VERSION__') format('woff2');
+  font-weight: 400; font-style: normal; font-display: block;
+  unicode-range: U+1B170-1B2FF, U+16FE1;
+}
+@font-face {
+  font-family: 'NushuSerif';
+  src: url('/fonts/NushuSerif.woff2?v=__FONT_VERSION__') format('woff2');
+  font-weight: 400; font-style: normal; font-display: block;
+}
 
 /* ============================================================
    Theme Variables

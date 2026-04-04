@@ -124,6 +124,16 @@ echo "── Installing dependencies ──"
 npm ci --prefer-offline 2>&1 | tail -1
 echo ""
 
+# ── Stamp font version ──────────────────────────────────
+# Replace __FONT_VERSION__ placeholder with Unix timestamp in CSS and layout.
+# This busts iOS PWA aggressive font caching after subset-fonts.py regenerates woff2.
+FONT_VERSION="$(date +%s)"
+echo "── Stamping font version: $FONT_VERSION ──"
+sed -i "s/__FONT_VERSION__/$FONT_VERSION/g" src/styles/global.css
+sed -i "s/__FONT_VERSION__/$FONT_VERSION/g" src/layouts/BaseLayout.astro
+echo "  ✓ Replaced __FONT_VERSION__ in global.css and BaseLayout.astro"
+echo ""
+
 # ── Build ─────────────────────────────────────────────────
 echo "── Building site ──"
 SHOW_TESTS="$SHOW_TESTS" npm run build 2>&1 | tail -5
