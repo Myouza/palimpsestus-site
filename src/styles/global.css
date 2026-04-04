@@ -124,7 +124,7 @@ body {
 
 .page-tab-left {
   left: 0;
-  top: 30%;
+  top: 25%;
   border-left: none;
   border-radius: 0 4px 4px 0;
   transform: translateY(-50%);
@@ -133,7 +133,7 @@ body {
 
 .page-tab-right {
   right: 10px;
-  top: 65%;
+  top: 75%;
   border-right: none;
   border-radius: 4px 0 0 4px;
   transform: translateY(-50%);
@@ -150,8 +150,7 @@ body {
   flex-shrink: 0;
 }
 
-/* Retracted state — slide out, only 8px strip visible.
-   Keep bg-surface so the strip is a visible solid tab, not invisible. */
+/* Retracted state — slide out, only 8px strip visible. */
 .page-tab.retracted {
   color: var(--border);
 }
@@ -159,7 +158,8 @@ body {
   transform: translateY(-50%) translateX(-16px);
 }
 .page-tab-right.retracted {
-  transform: translateY(-50%) translateX(16px);
+  /* 26px = (width 24 - visible 8) + iOS gap 10 */
+  transform: translateY(-50%) translateX(26px);
 }
 
 /* When associated panel is open, force tab to expanded state */
