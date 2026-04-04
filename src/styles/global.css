@@ -161,9 +161,10 @@ body {
   transform: translateY(-50%) translateX(12px);
 }
 
-/* When associated panel is open, force tab to expanded state */
+/* When associated panel is open, force tab to expanded + active appearance */
 .page-tab.panel-open {
   transform: translateY(-50%);
+  color: var(--accent);
 }
 
 /* ============================================================
