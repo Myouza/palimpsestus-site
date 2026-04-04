@@ -12,6 +12,10 @@ interface Props {
 
 const { title, description = site.description } = Astro.props;
 const fullTitle = title === site.name ? site.fullName : `${title} — ${site.name}`;
+
+// Font cache version: build timestamp auto-busts iOS PWA aggressive caching.
+// No manual maintenance needed — every build gets a fresh version.
+const fv = Date.now();
 ---
 
 <!doctype html>
@@ -34,9 +38,19 @@ const fullTitle = title === site.name ? site.fullName : `${title} — ${site.nam
     <meta property="og:image" content={`${site.url}/og-image.png`} />
     <meta property="og:url" content={site.url} />
     <meta property="og:locale" content="zh_CN" />
-    <!-- Preload critical font weights for faster first paint -->
-    <link rel="preload" href="/fonts/SiteSerif-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/SiteSerif-600.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Preload critical font weights (version auto-set at build time) -->
+    <link rel="preload" href={`/fonts/SiteSerif-400.woff2?v=${fv}`} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={`/fonts/SiteSerif-600.woff2?v=${fv}`} as="font" type="font/woff2" crossorigin />
+
+    {/* @font-face declarations with auto-versioned URLs */}
+    <Fragment set:html={`<style>
+@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-300.woff2?v=${fv}') format('woff2'); font-weight: 300; font-style: normal; font-display: block; }
+@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-400.woff2?v=${fv}') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-600.woff2?v=${fv}') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
+@font-face { font-family: 'SiteSerif'; src: url('/fonts/SiteSerif-700.woff2?v=${fv}') format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'NushuSerif-Fallback'; src: url('/fonts/NushuSerif.woff2?v=${fv}') format('woff2'); font-weight: 400; font-style: normal; font-display: block; unicode-range: U+1B170-1B2FF, U+16FE1; }
+@font-face { font-family: 'NushuSerif'; src: url('/fonts/NushuSerif.woff2?v=${fv}') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+</style>`} />
 
     <ClientRouter />
 
@@ -77,5 +91,50 @@ const fullTitle = title === site.name ? site.fullName : `${title} — ${site.nam
     <slot />
     <Footer />
     <ReaderSettings />
+
+    <!-- Page-tab scroll retraction: retract tabs after 100px scroll -->
+    <script>
+      function initTabScroll() {
+        const tabs = document.querySelectorAll('.page-tab');
+        if (!tabs.length) return;
+
+        let startY = window.scrollY;
+        let retracted = false;
+        let ticking = false;
+
+        // Reset: expand tabs
+        tabs.forEach(t => t.classList.remove('retracted'));
+
+        function onScroll() {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            ticking = false;
+            if (retracted) return;
+            const delta = Math.abs(window.scrollY - startY);
+            if (delta > 100) {
+              retracted = true;
+              document.querySelectorAll('.page-tab:not(.panel-open)').forEach(t => t.classList.add('retracted'));
+            }
+          });
+        }
+
+        // Expose reset: called when a panel closes so tabs stay expanded
+        (window as any).__resetTabScroll = () => {
+          retracted = false;
+          startY = window.scrollY;
+          document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('retracted'));
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        document.addEventListener('astro:before-swap', () => {
+          window.removeEventListener('scroll', onScroll);
+        }, { once: true });
+      }
+
+      initTabScroll();
+      document.addEventListener('astro:after-swap', initTabScroll);
+    </script>
   </body>
 </html>
