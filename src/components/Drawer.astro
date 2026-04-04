@@ -20,10 +20,9 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
 ---
 
 <button id="drawer-toggle"
-  class="fixed top-4 left-4 z-50 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-  style="background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border);"
+  class="page-tab page-tab-left"
   aria-label={ui.nav.openDrawer} title={ui.nav.drawerTitle}>
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
   </svg>
 </button>
@@ -75,10 +74,12 @@ const treeData = JSON.stringify(chapters.map(function ser(n: TreeNode): any {
   function openDrawer() {
     document.getElementById('drawer-panel')?.classList.remove('-translate-x-full');
     document.getElementById('drawer-overlay')?.classList.add('active');
+    document.getElementById('drawer-toggle')?.classList.add('panel-open');
   }
   function closeDrawer() {
     document.getElementById('drawer-panel')?.classList.add('-translate-x-full');
     document.getElementById('drawer-overlay')?.classList.remove('active');
+    document.getElementById('drawer-toggle')?.classList.remove('panel-open');
     (document.activeElement as HTMLElement)?.blur();
   }
 

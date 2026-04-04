@@ -7,59 +7,9 @@
    ============================================================
    SiteSerif: build-time subsets from NotoSerifCJKsc OTF source files.
    Python scans all content, extracts unique chars, generates woff2.
-   All characters (common + rare, CJK + Latin) from the same source,
-   ensuring pixel-perfect visual consistency across all platforms.
+   @font-face declarations live in BaseLayout.astro with auto-versioned
+   URLs (build timestamp) to bust iOS PWA aggressive font caching.
    ============================================================ */
-
-@font-face {
-  font-family: 'SiteSerif';
-  src: url('/fonts/SiteSerif-300.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-  font-display: block;
-}
-@font-face {
-  font-family: 'SiteSerif';
-  src: url('/fonts/SiteSerif-400.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: block;
-}
-@font-face {
-  font-family: 'SiteSerif';
-  src: url('/fonts/SiteSerif-600.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: block;
-}
-@font-face {
-  font-family: 'SiteSerif';
-  src: url('/fonts/SiteSerif-700.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: block;
-}
-
-/* Nüshu serif — official woff2 from nushu-script/Nyushu v1.0022
-   55KB, includes 396 nüshu + 1765 hanzi double-encoded glyphs.
-   Two declarations:
-   1. unicode-range scoped: catches direct nüshu chars in body text
-   2. Unscoped: used by .nushu class for hanzi→nüshu rendering */
-@font-face {
-  font-family: 'NushuSerif-Fallback';
-  src: url('/fonts/NushuSerif.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: block;
-  unicode-range: U+1B170-1B2FF, U+16FE1;
-}
-@font-face {
-  font-family: 'NushuSerif';
-  src: url('/fonts/NushuSerif.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: block;
-}
 
 /* ============================================================
    Theme Variables
@@ -137,9 +87,84 @@ body {
    ============================================================ */
 
 #settings-panel,
-#settings-toggle,
+.page-tab,
 .func-ui {
   font-family: var(--font-sans);
+}
+
+/* ============================================================
+   Page Tabs — bookmark-style toggles for drawer & settings.
+   Fixed to viewport edges, retract on scroll.
+   ============================================================ */
+
+.page-tab {
+  position: fixed;
+  top: 50%;
+  z-index: 50;
+  width: 24px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  transform: translateY(-50%);
+}
+
+/* Invisible touch-area extension (inward from screen edge) */
+.page-tab::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 20px;
+}
+
+.page-tab-left {
+  left: 0;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+.page-tab-left::before { right: -20px; }
+
+.page-tab-right {
+  right: 10px;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+.page-tab-right::before { left: -20px; }
+
+.page-tab:hover {
+  background: var(--bg);
+}
+
+.page-tab svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Retracted state — slide out, only 8px strip visible.
+   Strip takes on border color for a subtle page-edge hint. */
+.page-tab.retracted {
+  background: transparent;
+  border-color: var(--border);
+}
+.page-tab-left.retracted {
+  transform: translateY(-50%) translateX(-16px);
+}
+.page-tab-right.retracted {
+  transform: translateY(-50%) translateX(16px);
+}
+
+/* When associated panel is open, force tab to expanded state */
+.page-tab.panel-open {
+  transform: translateY(-50%);
+  background: var(--bg-surface);
 }
 
 /* ============================================================

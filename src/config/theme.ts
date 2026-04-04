@@ -11,6 +11,11 @@
  * and components that need direct access to values.
  */
 
+// ── Font Cache Version ────────────────────────────────────
+// Automatically set to build timestamp in BaseLayout.astro.
+// No manual maintenance needed — every build gets a fresh ?v= parameter,
+// busting iOS PWA aggressive font caching.
+
 // ── Color Palettes ─────────────────────────────────────────
 
 export interface ThemePalette {
