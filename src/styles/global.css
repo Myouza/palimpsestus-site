@@ -132,7 +132,7 @@ body {
 .page-tab-left::before { right: -20px; }
 
 .page-tab-right {
-  right: 10px;
+  right: 0;
   top: 75%;
   border-right: none;
   border-radius: 4px 0 0 4px;
@@ -150,16 +150,15 @@ body {
   flex-shrink: 0;
 }
 
-/* Retracted state — slide out, only 8px strip visible. */
+/* Retracted state — slide out, 12px visible (half the tab). */
 .page-tab.retracted {
   color: var(--border);
 }
 .page-tab-left.retracted {
-  transform: translateY(-50%) translateX(-16px);
+  transform: translateY(-50%) translateX(-12px);
 }
 .page-tab-right.retracted {
-  /* 26px = (width 24 - visible 8) + iOS gap 10 */
-  transform: translateY(-50%) translateX(26px);
+  transform: translateY(-50%) translateX(12px);
 }
 
 /* When associated panel is open, force tab to expanded state */
