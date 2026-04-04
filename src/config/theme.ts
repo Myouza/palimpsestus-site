@@ -12,9 +12,9 @@
  */
 
 // ── Font Cache Version ────────────────────────────────────
-// Automatically set to build timestamp in BaseLayout.astro.
-// No manual maintenance needed — every build gets a fresh ?v= parameter,
-// busting iOS PWA aggressive font caching.
+// __FONT_VERSION__ placeholders in global.css and BaseLayout.astro
+// are replaced by server-deploy.sh with a Unix timestamp before build.
+// This busts iOS PWA aggressive caching. No manual maintenance needed.
 
 // ── Color Palettes ─────────────────────────────────────────
 
