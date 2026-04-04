@@ -74,6 +74,7 @@ echo ""
 # ── Pull framework repo ───────────────────────────────────
 echo "── Pulling framework ($FRAMEWORK_BRANCH) ──"
 cd "$FRAMEWORK_REPO"
+git checkout -- .
 git fetch origin
 git checkout "$FRAMEWORK_BRANCH"
 git reset --hard "origin/$FRAMEWORK_BRANCH"
